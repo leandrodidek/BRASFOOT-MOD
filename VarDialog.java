@@ -5,8 +5,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.RoundRectangle2D;
 import java.util.Random;
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.plaf.basic.BasicButtonUI;
 
 public class VarDialog extends JPanel {
 
@@ -37,6 +42,7 @@ public class VarDialog extends JPanel {
     private JLabel lblStepPills;
     private JLabel lblMensagem;
     private JButton btnAcao;
+    private JPanel panelCard;
     private Timer timer;
     private int step = 0;
     private int subMotivo;
@@ -50,7 +56,14 @@ public class VarDialog extends JPanel {
     private String nomeTime;
     private String nomeJogador;
     private int minuto;
+    private boolean isUserTeam = true;
     private Runnable onComplete;
+
+    // Cores EA FC Console Dark UI
+    private static final Color BG_DEEP = new Color(9, 13, 22);
+    private static final Color BG_TOP = new Color(13, 21, 38);
+    private static final Color CARD_BG = new Color(15, 23, 42);
+    private static final Color BORDER_SLATE = new Color(30, 41, 59);
 
     // =========================================================================
     // FRASES DE IMPEDIMENTO (ETAPA 1 E ETAPA 2)
@@ -187,18 +200,22 @@ public class VarDialog extends JPanel {
     private static final String[] STEP0_OBSCENO = {
         "VAR analisa conduta anti-desportiva: flagrado possivel gesto obsceno de %s (%s)...",
         "Checando imagens de camera isolada: suposta provocacao ofensiva e gesto obsceno de %s...",
-        "Clima tenso com mais de 10 faltas! VAR revisa gesto obsceno e ofensa grave de %s...",
+        "Clima tenso com mais de 6 cartoes! VAR revisa gesto obsceno e ofensa grave de %s...",
         "Arbitro de video convocado para revisar conduta injuriosa e gesto obsceno de %s para a torcida..."
     };
 
     private static final String[] VERMELHO_OBSCENO = {
-        "Cartao vermelho direto! Flagrado gesto obsceno acintoso em clima tenso com mais de 10 faltas. Expulsao confirmada!",
+        "Cartao vermelho direto! Flagrado gesto obsceno acintoso em partida tensa com mais de 6 cartoes. Expulsao confirmada!",
         "Expulsao confirmada pelo VAR! Gesto obsceno e provocacao desrespeitosa inaceitavel no gramado.",
         "Decisao de video: Vermelho direto! Conduta anti-desportiva gravissima com gestos obscenos.",
         "Direto para o vestiario! O VAR flagrou gesto obsceno em partida tensa. Jogador expulso!"
     };
 
     public VarDialog(JDialog dialog, int tipoLance, int resultado, int motivoChecagem, String nomeTime, String nomeJogador, int minuto, ImageIcon escudoTime, Runnable onComplete) {
+        this(dialog, tipoLance, resultado, motivoChecagem, nomeTime, nomeJogador, minuto, escudoTime, true, onComplete);
+    }
+
+    public VarDialog(JDialog dialog, int tipoLance, int resultado, int motivoChecagem, String nomeTime, String nomeJogador, int minuto, ImageIcon escudoTime, boolean isUserTeam, Runnable onComplete) {
         this.dialog = dialog;
         this.tipoEvento = tipoLance;
         this.resultadoFinal = resultado;
@@ -207,6 +224,7 @@ public class VarDialog extends JPanel {
         this.nomeTime = (nomeTime != null && !nomeTime.isEmpty()) ? nomeTime : "Time";
         this.nomeJogador = (nomeJogador != null && !nomeJogador.isEmpty()) ? nomeJogador : "Jogador";
         this.minuto = minuto;
+        this.isUserTeam = isUserTeam;
         this.onComplete = onComplete;
 
         // Determina o sub-cenario fixo para este lance garantindo 100% de coerencia entre as duas etapas
@@ -217,36 +235,52 @@ public class VarDialog extends JPanel {
         this.fraseFinal = sortearFraseDecisao();
 
         setLayout(new BorderLayout());
-        setPreferredSize(new Dimension(750, 390));
-        setMinimumSize(new Dimension(750, 390));
-        setBackground(new Color(9, 13, 22)); // Deep Obsidian EA FC
+        setPreferredSize(new Dimension(750, 400));
+        setMinimumSize(new Dimension(750, 400));
+        setBackground(BG_DEEP);
 
         // =========================================================
-        // BANNER SUPERIOR: BROADCAST PREMIUM EA FC / FOOTBALL MANAGER
+        // BANNER SUPERIOR: BROADCAST PREMIUM EA FC
         // =========================================================
         JPanel panelTopBanner = new JPanel(new BorderLayout(14, 0));
-        panelTopBanner.setBackground(new Color(13, 21, 38)); // Slate Navy
+        panelTopBanner.setBackground(BG_TOP);
         panelTopBanner.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(30, 41, 59)),
-            BorderFactory.createEmptyBorder(10, 20, 10, 20)
+            BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER_SLATE),
+            BorderFactory.createEmptyBorder(12, 22, 12, 22)
         ));
 
-        // Escudo do Clube
+        // Escudo do Clube a esquerda
         if (escudoTime != null) {
             JLabel lblEscudo = new JLabel(escudoTime);
             lblEscudo.setPreferredSize(new Dimension(46, 46));
             panelTopBanner.add(lblEscudo, BorderLayout.WEST);
         }
 
-        // Textos de Cabecalho: CLUBE, MINUTO E MOTIVO ESPECIFICO
-        JPanel panelTextosTop = new JPanel(new GridLayout(2, 1, 0, 3));
+        // Textos de Cabecalho: LOGO DO VAR, ACAO EXPLICITA, CLUBE E MINUTO
+        JPanel panelTextosTop = new JPanel(new GridLayout(2, 1, 0, 4));
         panelTextosTop.setOpaque(false);
 
         String minBadge = (minuto > 0) ? " [" + minuto + "']" : "";
         
-        String linha1Html = "<html><span style='background:#0284c7; color:#ffffff; font-weight:bold; font-size:10px; padding:2px 7px; border-radius:3px;'>VAR REVIEW</span> &nbsp;"
-            + "<span style='color:#f8fafc; font-weight:bold; font-size:16px; letter-spacing:0.5px;'>" + this.nomeTime.toUpperCase() + "</span> "
-            + "<span style='background:#1e293b; color:#38bdf8; font-weight:bold; font-size:11px; padding:2px 6px; border:1px solid #334155; border-radius:3px;'>" + minBadge + "</span></html>";
+        // Define a acao explicita antes do nome do time
+        String prefixoAcao;
+        if (this.tipoEvento == EVENT_GOL) {
+            prefixoAcao = "GOL DO " + this.nomeTime.toUpperCase() + " EM REVISAO";
+        } else {
+            prefixoAcao = "REVISAO PARA POSSIVEL CARTAO VERMELHO (" + this.nomeTime.toUpperCase() + ")";
+        }
+
+        // Linha 1: Componente horizontal com Logo VAR + Acao + Minuto
+        JPanel linha1Panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        linha1Panel.setOpaque(false);
+
+        JLabel lblVarLogo = new JLabel(VarLogoBadge.getVarLogoIcon());
+        linha1Panel.add(lblVarLogo);
+
+        JLabel lblAcaoClube = new JLabel("<html><span style='color:#f8fafc; font-family:Segoe UI, sans-serif; font-weight:bold; font-size:15px; letter-spacing:0.5px;'>"
+            + prefixoAcao + "</span> &nbsp;<span style='background:#1e293b; color:#38bdf8; font-family:Segoe UI, sans-serif; font-weight:bold; font-size:11px; padding:2px 7px; border:1px solid #334155; border-radius:4px;'>"
+            + minBadge + "</span></html>");
+        linha1Panel.add(lblAcaoClube);
 
         String textoMotivo;
         String corMotivoHex;
@@ -275,58 +309,60 @@ public class VarDialog extends JPanel {
             + "<b style='color:" + corMotivoHex + "; font-size:12px;'>" + textoMotivo + "</b>"
             + "</span></html>";
 
-        JLabel lblLinha1 = new JLabel(linha1Html);
         JLabel lblLinha2 = new JLabel(linha2Html);
 
-        panelTextosTop.add(lblLinha1);
+        panelTextosTop.add(linha1Panel);
         panelTextosTop.add(lblLinha2);
         panelTopBanner.add(panelTextosTop, BorderLayout.CENTER);
 
         add(panelTopBanner, BorderLayout.NORTH);
 
         // =========================================================
-        // CENTRO: INDICADOR DE 2 ETAPAS + CARD DE TELEMETRIA DO VAR
+        // CENTRO: INDICADOR DE ETAPAS + CARD ARREDONDADO TELEMETRIA
         // =========================================================
         JPanel panelCenterWrapper = new JPanel(new BorderLayout(0, 12));
         panelCenterWrapper.setOpaque(false);
-        panelCenterWrapper.setBorder(BorderFactory.createEmptyBorder(14, 20, 10, 20));
+        panelCenterWrapper.setBorder(BorderFactory.createEmptyBorder(14, 22, 10, 22));
 
         this.lblStepPills = new JLabel("", SwingConstants.CENTER);
         panelCenterWrapper.add(this.lblStepPills, BorderLayout.NORTH);
 
-        JPanel panelCard = new JPanel(new GridBagLayout());
-        panelCard.setBackground(new Color(14, 22, 38)); // Dark Navy Telemetry
-        panelCard.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(30, 41, 59), 1),
-            BorderFactory.createEmptyBorder(18, 15, 18, 15)
+        this.panelCard = new JPanel(new GridBagLayout());
+        this.panelCard.setBackground(CARD_BG);
+        this.panelCard.setBorder(BorderFactory.createCompoundBorder(
+            new EaFcUiHelper.RoundedBorder(14, BORDER_SLATE, 1),
+            BorderFactory.createEmptyBorder(20, 20, 20, 20)
         ));
 
         this.lblMensagem = new JLabel("", SwingConstants.CENTER);
-        panelCard.add(this.lblMensagem);
-        panelCenterWrapper.add(panelCard, BorderLayout.CENTER);
+        this.panelCard.add(this.lblMensagem);
+        panelCenterWrapper.add(this.panelCard, BorderLayout.CENTER);
 
         add(panelCenterWrapper, BorderLayout.CENTER);
 
         // =========================================================
-        // INFERIOR: BOTAO DE ACAO CENTRALIZADO
+        // INFERIOR: BOTAO DE ACAO ARREDONDADO PREMIUM EA FC
         // =========================================================
-        JPanel panelBottom = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 12));
+        JPanel panelBottom = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 14));
         panelBottom.setOpaque(false);
 
         this.btnAcao = new JButton("Ver Decisao >");
         this.btnAcao.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        this.btnAcao.setBackground(new Color(16, 185, 129)); // Emerald Neon
-        this.btnAcao.setForeground(new Color(2, 44, 34)); // Dark Green Contrast
+        this.btnAcao.setPreferredSize(new Dimension(220, 38));
         this.btnAcao.setFocusPainted(false);
+        this.btnAcao.setContentAreaFilled(false);
+        this.btnAcao.setBorderPainted(false);
         this.btnAcao.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        this.btnAcao.setPreferredSize(new Dimension(210, 36));
         this.btnAcao.addActionListener(e -> avancarEtapa());
-        panelBottom.add(this.btnAcao);
 
+        // Estilizacao com cantos arredondados e hover suave
+        aplicarEstiloBotao(this.btnAcao, new Color(16, 185, 129), new Color(34, 197, 94));
+
+        panelBottom.add(this.btnAcao);
         add(panelBottom, BorderLayout.SOUTH);
 
-        // Borda Obsidian externa
-        atualizarBordaGlow(new Color(2, 132, 199)); // Cyan
+        // Borda Obsidian externa arredondada de 14px
+        atualizarBordaExterna(new Color(2, 132, 199));
 
         if (dialog != null) {
             dialog.addKeyListener(new KeyAdapter() {
@@ -346,6 +382,45 @@ public class VarDialog extends JPanel {
         }
     }
 
+    private void aplicarEstiloBotao(JButton btn, final Color baseColor, final Color hoverColor) {
+        btn.setUI(new BasicButtonUI() {
+            @Override
+            public void paint(Graphics g, JComponent c) {
+                AbstractButton b = (AbstractButton) c;
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+                boolean hover = b.getModel().isRollover();
+                boolean pressed = b.getModel().isPressed();
+
+                int w = b.getWidth();
+                int h = b.getHeight();
+                int arc = 10;
+
+                Color bg = pressed ? baseColor.darker() : (hover ? hoverColor : baseColor);
+                g2.setColor(bg);
+                g2.fillRoundRect(0, 0, w, h, arc, arc);
+
+                g2.setColor(new Color(255, 255, 255, hover ? 180 : 80));
+                g2.setStroke(new BasicStroke(1.0f));
+                g2.drawRoundRect(0, 0, w - 1, h - 1, arc, arc);
+
+                Font font = b.getFont();
+                g2.setFont(font);
+                FontMetrics fm = g2.getFontMetrics(font);
+                String txt = b.getText();
+                int txtW = fm.stringWidth(txt);
+                int txtX = (w - txtW) / 2;
+                int txtY = (h - fm.getHeight()) / 2 + fm.getAscent();
+
+                g2.setColor(new Color(2, 44, 34)); // Contraste verde escuro sobre esmeralda
+                g2.drawString(txt, txtX, txtY);
+                g2.dispose();
+            }
+        });
+    }
+
     private void definirSubCenario() {
         if (this.motivoChecagem == MOTIVO_IMPEDIMENTO) {
             this.subMotivo = SUB_IMPEDIMENTO;
@@ -354,7 +429,6 @@ public class VarDialog extends JPanel {
         } else if (this.tipoEvento == EVENT_VERMELHO) {
             this.subMotivo = SUB_CONDUTA_VIOLENTA;
         } else {
-            // Sorteia o sub-motivo especifico da falta
             Random rnd = new Random();
             int r = rnd.nextInt(3);
             if (r == 0) {
@@ -367,11 +441,14 @@ public class VarDialog extends JPanel {
         }
     }
 
-    private void atualizarBordaGlow(Color cor) {
-        setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(cor, 2),
-            BorderFactory.createEmptyBorder(0, 0, 0, 0)
-        ));
+    private void atualizarBordaExterna(Color cor) {
+        setBorder(new EaFcUiHelper.RoundedBorder(14, cor, 2));
+        if (panelCard != null) {
+            panelCard.setBorder(BorderFactory.createCompoundBorder(
+                new EaFcUiHelper.RoundedBorder(14, cor.darker(), 1),
+                BorderFactory.createEmptyBorder(20, 20, 20, 20)
+            ));
+        }
     }
 
     private void configurarFrasesEtapa0() {
@@ -442,19 +519,18 @@ public class VarDialog extends JPanel {
     private void setStep0() {
         this.step = 0;
         atualizarPills(0);
-        atualizarBordaGlow(new Color(2, 132, 199)); // Cyan
+        atualizarBordaExterna(new Color(2, 132, 199)); // Cyan Neon
 
         this.lblMensagem.setText("<html><table width='670' cellpadding='0' cellspacing='0' border='0'>"
             + "<tr><td align='center' style='font-family:Segoe UI, sans-serif;'>"
-            + "<div style='color:#38bdf8; font-size:17px; font-weight:bold; letter-spacing:1px; margin-bottom:12px;'>"
+            + "<div style='color:#38bdf8; font-size:18px; font-weight:bold; letter-spacing:1px; margin-bottom:12px;'>"
             + this.tituloStep0 + "</div>"
-            + "<div style='color:#f8fafc; font-size:15px; font-weight:bold; line-height:1.45;'>"
+            + "<div style='color:#f8fafc; font-size:15px; font-weight:bold; line-height:1.5; padding:0 20px;'>"
             + this.fraseStep0 + "</div>"
             + "</td></tr></table></html>");
 
         this.btnAcao.setText("Ver Decisao >");
-        this.btnAcao.setBackground(new Color(16, 185, 129));
-        this.btnAcao.setForeground(new Color(2, 44, 34));
+        aplicarEstiloBotao(this.btnAcao, new Color(16, 185, 129), new Color(34, 197, 94));
     }
 
     /**
@@ -468,7 +544,7 @@ public class VarDialog extends JPanel {
         Color corGlow = legal ? new Color(16, 185, 129) : new Color(239, 68, 68);
         String corHex = legal ? "#10b981" : "#ef4444";
 
-        atualizarBordaGlow(corGlow);
+        atualizarBordaExterna(corGlow);
 
         String tituloDecisao;
         if (this.resultadoFinal == RESULT_GOL_LEGAL) {
@@ -485,26 +561,32 @@ public class VarDialog extends JPanel {
 
         this.lblMensagem.setText("<html><table width='670' cellpadding='0' cellspacing='0' border='0'>"
             + "<tr><td align='center' style='font-family:Segoe UI, sans-serif;'>"
-            + "<div style='color:" + corHex + "; font-size:20px; font-weight:bold; letter-spacing:0.5px; margin-bottom:12px;'>"
+            + "<div style='color:" + corHex + "; font-size:21px; font-weight:bold; letter-spacing:0.5px; margin-bottom:12px;'>"
             + tituloDecisao + "</div>"
-            + "<div style='color:#f8fafc; font-size:15px; font-weight:bold; line-height:1.45;'>"
+            + "<div style='color:#f8fafc; font-size:15px; font-weight:bold; line-height:1.5; padding:0 20px;'>"
             + this.fraseFinal + "</div>"
             + "</td></tr></table></html>");
 
         this.btnAcao.setText("Continuar Partida >");
-        this.btnAcao.setBackground(new Color(16, 185, 129));
-        this.btnAcao.setForeground(new Color(2, 44, 34));
+        aplicarEstiloBotao(this.btnAcao, new Color(16, 185, 129), new Color(34, 197, 94));
         this.btnAcao.requestFocusInWindow();
+
+        // Toca o som de desfecho final do VAR (comemoração, silenciamento nativo, etc)
+        if (this.tipoEvento == EVENT_GOL) {
+            boolean golConfirmado = (this.resultadoFinal == RESULT_GOL_LEGAL);
+            VarSoundHelper.tocarSomDecisaoFinal(this.isUserTeam, golConfirmado);
+        }
     }
 
     private void atualizarPills(int etapaAtiva) {
         String c1 = (etapaAtiva == 0) ? "background:#0284c7; color:#ffffff; font-weight:bold;" : "background:#1e293b; color:#64748b;";
         String c2 = (etapaAtiva == 1) ? "background:#10b981; color:#022c22; font-weight:bold;" : "background:#1e293b; color:#64748b;";
+        String seta = "&nbsp;&nbsp;<span style='color:#38bdf8; font-weight:bold; font-size:12px;'>&#10132;</span>&nbsp;&nbsp;";
 
         this.lblStepPills.setText("<html><center style='font-family:Segoe UI, sans-serif; font-size:11px;'>"
-            + "<span style='" + c1 + " padding:4px 16px; border-radius:3px;'>1. CHECAGEM DO VAR</span> &nbsp; "
-            + "<span style='color:#475569; font-size:13px;'>➔</span> &nbsp; "
-            + "<span style='" + c2 + " padding:4px 16px; border-radius:3px;'>2. DECISAO FINAL</span>"
+            + "<span style='" + c1 + " padding:5px 18px; border-radius:5px;'>1. CHECAGEM DO VAR</span>"
+            + seta
+            + "<span style='" + c2 + " padding:5px 18px; border-radius:5px;'>2. DECISAO FINAL</span>"
             + "</center></html>");
     }
 
@@ -558,12 +640,21 @@ public class VarDialog extends JPanel {
     }
 
     public static void exibir(java.awt.Frame parent, int tipoLance, int resultado, int motivoChecagem, String nomeTime, String nomeJogador, int minuto, ImageIcon escudoTime, Runnable onComplete) {
+        exibir(parent, tipoLance, resultado, motivoChecagem, nomeTime, nomeJogador, minuto, escudoTime, true, onComplete);
+    }
+
+    public static void exibir(java.awt.Frame parent, int tipoLance, int resultado, int motivoChecagem, String nomeTime, String nomeJogador, int minuto, ImageIcon escudoTime, boolean isUserTeam, Runnable onComplete) {
+        // Toca som de gol e imediata interrupcao com apito quando for lance de gol indo para o VAR
+        if (tipoLance == EVENT_GOL) {
+            VarSoundHelper.tocarSomInicioVar(isUserTeam);
+        }
+
         JDialog dlg = new JDialog(parent, true);
         dlg.setUndecorated(true);
-        VarDialog panel = new VarDialog(dlg, tipoLance, resultado, motivoChecagem, nomeTime, nomeJogador, minuto, escudoTime, onComplete);
+        VarDialog panel = new VarDialog(dlg, tipoLance, resultado, motivoChecagem, nomeTime, nomeJogador, minuto, escudoTime, isUserTeam, onComplete);
         dlg.setContentPane(panel);
         dlg.pack();
-        dlg.setSize(750, 390);
+        dlg.setSize(750, 400);
         dlg.setLocationRelativeTo(parent);
         dlg.setVisible(true);
     }

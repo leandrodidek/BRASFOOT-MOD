@@ -1,7 +1,17 @@
-$javac = "C:\Users\Leandro\.antigravity-ide\extensions\redhat.java-1.56.0-win32-x64\jre\21.0.12.1-win32-x86_64\bin\javac.exe"
+$javac = (Get-ChildItem -Path "C:\Program Files\Microsoft", "C:\Program Files\Java" -Filter "javac.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName)
+if (-not $javac) { $javac = (Get-Command javac -ErrorAction SilentlyContinue).Source }
 $cp = "C:\Brasfoot22-23\bf22-23_extracted.jar;C:\Brasfoot22-23\projeto\build_mod;C:\Brasfoot22-23\projeto\reflectasm-1.10.1-shaded.jar"
-& $javac --release 8 -cp $cp -d "C:\Brasfoot22-23\projeto\build_test" "C:\Users\Leandro\.gemini\antigravity-ide\scratch\FullEaFcInjector.java"
+$buildTest = "C:\Brasfoot22-23\projeto\build_test"
+
+Write-Host "Compiling FullEaFcInjector.java..."
+& $javac --release 8 -encoding UTF-8 -cp $cp -d $buildTest "$PSScriptRoot\FullEaFcInjector.java"
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Compilation of FullEaFcInjector failed!" -ForegroundColor Red
+    exit 1
+}
 
 $java = "C:\Program Files\Java\jre1.8.0_503\bin\java.exe"
-$runCp = "C:\Brasfoot22-23\projeto\build_test;$cp"
+if (-not (Test-Path $java)) { $java = (Get-Command java -ErrorAction SilentlyContinue).Source }
+$runCp = "$buildTest;$cp"
+Write-Host "Running FullEaFcInjector..."
 & $java -cp $runCp mod.brasfoot.FullEaFcInjector

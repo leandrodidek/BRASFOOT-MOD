@@ -1,5 +1,26 @@
 # Ignore root compiled classes
 /*.class
+/components/
+/mod/
+/META-INF/
+/aeicons/
+
+# Scratch & Inspection tools
+Inspect*.java
+Find*.java
+Check*.java
+Print*.java
+Render*.java
+VisualVerification*.java
+Convert*.java
+Generate*.java
+Measure*.java
+Make*.java
+
+# Temporary text & preview files
+*.txt
+test_*.png
+font_test.png
 
 # OS / temporary files
 Thumbs.db

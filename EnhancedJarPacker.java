@@ -80,7 +80,14 @@ public class EnhancedJarPacker {
             String path = prefix.isEmpty() ? f.getName() : prefix + "/" + f.getName();
             if (f.isDirectory()) {
                 collectFiles(f, path, map);
-            } else if (!f.getName().endsWith(".java") && !f.getName().contains("JarPacker") && !f.getName().contains("InspectMethods") && !f.getName().contains("TestASM") && !f.getName().contains("ModInjector")) {
+            } else if (!f.getName().endsWith(".java") 
+                    && !f.getName().contains("JarPacker") 
+                    && !f.getName().contains("InspectMethods") 
+                    && !f.getName().contains("TestASM") 
+                    && !f.getName().contains("ModInjector")
+                    && !f.getName().contains("FullEaFcInjector")
+                    && !f.getName().contains("VerifyClasses")
+                    && !f.getName().contains("TestVisual")) {
                 map.put(path, f);
             }
         }

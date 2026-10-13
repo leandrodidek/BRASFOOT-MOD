@@ -155,7 +155,7 @@ public class ModBridge {
             int energiaDef = calcularEnergiaMedia(matchEngine, teamOpponent == homeTeam);
 
             // ==========================================
-            // VERIFICACAO DE FALTAS TOTAIS E EVENTO RARO (>10 FALTAS, 1% DE CHANCE)
+            // VERIFICACAO DE CARTOES TOTAIS E EVENTO RARO (>6 CARTOES NO JOGO, 1% DE CHANCE)
             // ==========================================
             int currentMatchHash = System.identityHashCode(matchEngine);
             if (currentMatchHash != lastEvaluatedMatchHash) {
@@ -164,21 +164,32 @@ public class ModBridge {
                 pendingObsceneExpulsion = false;
             }
 
-            int totalFaltas = 0;
+            int totalCartoes = 0;
             try {
-                int[] faltas = matchEngine.hD();
-                if (faltas != null && faltas.length >= 2) {
-                    totalFaltas = faltas[0] + faltas[1];
+                // Percorre a lista de eventos da partida (best.I.hE) para somar amarelos e vermelhos de ambos os times
+                ArrayList<?> eventsList = matchEngine.hE();
+                if (eventsList != null) {
+                    for (Object evObj : eventsList) {
+                        if (evObj == null) continue;
+                        try {
+                            Method getCodeM = evObj.getClass().getMethod("et");
+                            int cCode = (Integer) getCodeM.invoke(evObj);
+                            // Código 2 = Amarelo, Código 3 = 2º Amarelo / Vermelho, Código 4 = Vermelho Direto
+                            if (cCode == 2 || cCode == 3 || cCode == 4) {
+                                totalCartoes++;
+                            }
+                        } catch (Exception ignored) {}
+                    }
                 }
             } catch (Exception ignored) {}
 
-            // Só ativa o sorteio de 1% se a partida tiver mais de 10 faltas somando ambos os times
-            if (totalFaltas > 10 && !matchEvaluatedForObscene) {
+            // Ativa o sorteio de 1% se a partida tiver mais de 6 cartões no jogo (somando amarelos e vermelhos de ambas as equipes)
+            if (totalCartoes > 6 && !matchEvaluatedForObscene) {
                 matchEvaluatedForObscene = true; // Sorteia apenas uma vez por partida elegível
                 java.util.Random rndObsceno = new java.util.Random();
                 if (rndObsceno.nextInt(100) == 0) { // 1% de chance rara
                     pendingObsceneExpulsion = true;
-                    System.out.println("[VAR] EVENTO RARO SORTEADO! Partida tensa (" + totalFaltas + " faltas). Expulsao por gesto obsceno ativada (1%)!");
+                    System.out.println("[VAR] EVENTO RARO SORTEADO! Partida tensa (" + totalCartoes + " cartoes). Expulsao por gesto obsceno ativada (1%)!");
                 }
             }
 
@@ -256,7 +267,7 @@ public class ModBridge {
                             }
                         } catch (Exception ignored) {}
 
-                        System.out.println("[VAR] EXPULSAO APLICADA! " + nomeInfrator + " (" + timeInfrator + ") expulso por gesto obsceno! (" + totalFaltas + " faltas no jogo).");
+                        System.out.println("[VAR] EXPULSAO APLICADA! " + nomeInfrator + " (" + timeInfrator + ") expulso por gesto obsceno! (" + totalCartoes + " cartoes no jogo).");
                         return false; // Permite ao Brasfoot tocar o apito de expulsão e abrir a tela tática
                     }
                 }
@@ -306,7 +317,14 @@ public class ModBridge {
                 final int resFinal = resultado;
                 final Object evA = eventA;
 
-                VarDialog.exibir(parentFrame, VarDialog.EVENT_GOL, resultado, motivoLance, nomeTime, nomeJogador, minuto, escudoTime, () -> {
+                boolean isUserTeam = false;
+                try {
+                    if (teamWhoDidEvent != null && teamWhoDidEvent.jZ() != null) {
+                        isUserTeam = teamWhoDidEvent.jZ().booleanValue();
+                    }
+                } catch (Throwable ignored) {}
+
+                VarDialog.exibir(parentFrame, VarDialog.EVENT_GOL, resultado, motivoLance, nomeTime, nomeJogador, minuto, escudoTime, isUserTeam, () -> {
                     if (resFinal != VarDialog.RESULT_GOL_LEGAL) {
                         try {
                             Method setCodeM = evA.getClass().getMethod("a", int.class);
@@ -588,6 +606,25 @@ public class ModBridge {
             return count > 0 ? (total / count) : 75;
         } catch (Exception e) {
             return 75;
+        }
+    }
+
+    /**
+     * Intercepta a chamada nativa a.dV.dk(int soundId) do motor de jogo.
+     * Se o gol acabou de ser confirmado pelo VAR, silencia a execução nativa redundante
+     * evitando que o som toque uma segunda vez logo após fechar o diálogo.
+     */
+    public static void playGameSound(Object dVInstance, int soundId) {
+        if ((soundId == 2 || soundId == 3) && VarSoundHelper.deveSilenciarSomGolNativo()) {
+            VarSoundHelper.consumirSilenciamentoSomGolNativo();
+            return;
+        }
+        try {
+            Method dkMethod = dVInstance.getClass().getDeclaredMethod("dk", int.class);
+            dkMethod.setAccessible(true);
+            dkMethod.invoke(dVInstance, soundId);
+        } catch (Throwable t) {
+            t.printStackTrace();
         }
     }
 }

@@ -28,9 +28,11 @@ public class EaFcUiHelper {
 
     // Paleta Console Dark HUD EA FC
     public static final Color BG_DARK = new Color(11, 15, 25);
+    public static final Color BG_DEEP = BG_DARK;
     public static final Color PANEL_DARK = new Color(18, 24, 38);
     public static final Color CARD_BG = new Color(24, 33, 52);
     public static final Color BORDER_COLOR = new Color(45, 60, 88);
+    public static final Color BORDER_SLATE = BORDER_COLOR;
     public static final Color BORDER_ACTIVE = new Color(59, 130, 246);
     public static final Color TEXT_WHITE = new Color(255, 255, 255);
     public static final Color TEXT_MUTED = new Color(180, 195, 215);
@@ -38,6 +40,14 @@ public class EaFcUiHelper {
     public static final Color EMERALD = new Color(16, 185, 129);
     public static final Color CYAN = new Color(14, 165, 233);
     public static final Color AMBER = new Color(245, 158, 11);
+
+    public static void applyHighQualityRendering(Graphics2D g) {
+        if (g == null) return;
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+        g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+    }
 
     public static final Font FONT_TITLE = new Font("Verdana", Font.BOLD, 11);
     public static final Font FONT_BOLD = new Font("Verdana", Font.BOLD, 11);
@@ -942,7 +952,7 @@ public class EaFcUiHelper {
     /**
      * Estiliza botões de ação no padrão EA FC com ícones vetoriais modernos de alta definição.
      */
-    private static void styleActionPillButton(final JButton btn, final String text, final boolean isPrimary) {
+    public static void styleActionPillButton(final JButton btn, final String text, final boolean isPrimary) {
         if (btn == null) return;
         btn.setIcon(null);
         btn.setText(text);
@@ -1242,7 +1252,7 @@ public class EaFcUiHelper {
         return power;
     }
 
-    private static int calculateOverall(List<best.F> players, List<Integer> slots) {
+    public static int calculateOverall(List<best.F> players, List<Integer> slots) {
         if (players == null || players.isEmpty()) return 70;
         int sum = 0;
         for (int i = 0; i < players.size(); i++) {
@@ -1253,7 +1263,7 @@ public class EaFcUiHelper {
         return Math.round((float) sum / players.size());
     }
 
-    private static int[] calculateTeamAttributes(List<best.F> starters, List<Integer> slots) {
+    public static int[] calculateTeamAttributes(List<best.F> starters, List<Integer> slots) {
         if (starters == null || starters.isEmpty()) {
             return new int[]{75, 75, 75, 75, 75, 75};
         }
@@ -1361,6 +1371,22 @@ public class EaFcUiHelper {
     }
 
     /**
+     * Pinta o fundo ultra escuro Console HUD EA FC eliminando o fundo antigo /img/f02.jpg.
+     */
+    public static void paintModernInMatchBackground(JPanel root, Graphics g) {
+        if (root == null || g == null) return;
+        Graphics2D g2 = (Graphics2D) g.create();
+        applyHighQualityRendering(g2);
+        int w = root.getWidth();
+        int h = root.getHeight();
+        g2.setColor(BG_DEEP);
+        g2.fillRect(0, 0, w, h);
+        g2.setColor(BORDER_SLATE);
+        g2.drawRoundRect(1, 1, w - 2, h - 2, 16, 16);
+        g2.dispose();
+    }
+
+    /**
      * Aplica a estilização na Tela do Treinador Durante a Partida (cD).
      */
     public static void applyInMatchLayout(
@@ -1381,31 +1407,18 @@ public class EaFcUiHelper {
             JComboBox cbAtaque
     ) {
         try {
-            root.setBackground(BG_DARK);
-            df.setBackground(BG_DARK);
-            df.setOpaque(true);
+            InMatchHudManager.setupHud(root);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-            teamHome.setFont(new Font("Verdana", Font.BOLD, 13));
-            teamHome.setForeground(TEXT_WHITE);
-
-            scoreHome.setFont(new Font("Verdana", Font.BOLD, 18));
-            scoreHome.setForeground(TEXT_WHITE);
-
-            teamAway.setFont(new Font("Verdana", Font.BOLD, 13));
-            teamAway.setForeground(TEXT_WHITE);
-
-            scoreAway.setFont(new Font("Verdana", Font.BOLD, 18));
-            scoreAway.setForeground(TEXT_WHITE);
-
-            matchTime.setFont(new Font("Verdana", Font.BOLD, 18));
-            matchTime.setForeground(EMERALD);
-
-            styleActionPillButton(btnVoltarJogo, "VOLTAR AO JOGO", true);
-
-            styleModernComboBox(cbEstilo);
-            styleModernComboBox(cbMarcacao);
-            styleModernComboBox(cbAtaque);
-
+    /**
+     * Chamado quando o time e atualizado ou ha substituicao.
+     */
+    public static void onInMatchTeamRefreshed(Object cD) {
+        try {
+            InMatchHudManager.onTeamRefreshed(cD);
         } catch (Exception e) {
             e.printStackTrace();
         }

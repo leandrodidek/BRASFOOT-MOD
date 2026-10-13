@@ -95,6 +95,25 @@ public class FullEaFcInjector {
                         };
                     }
 
+                    if ("e".equals(name) && "(IZ)V".equals(desc)) {
+                        return new MethodVisitor(Opcodes.ASM5, mv) {
+                            @Override
+                            public void visitIntInsn(int opcode, int operand) {
+                                if (opcode == Opcodes.SIPUSH) {
+                                    if (operand == 966 || operand == 1024) {
+                                        super.visitIntInsn(opcode, 1740);
+                                        return;
+                                    }
+                                    if (operand == 726 || operand == 663) {
+                                        super.visitIntInsn(opcode, 880);
+                                        return;
+                                    }
+                                }
+                                super.visitIntInsn(opcode, operand);
+                            }
+                        };
+                    }
+
                     return mv;
                 }
             }, 0);
@@ -370,6 +389,33 @@ public class FullEaFcInjector {
                                     mv.visitFieldInsn(Opcodes.GETFIELD, "a/cD", "Dn", "Ljavax/swing/JComboBox;");
                                     mv.visitMethodInsn(Opcodes.INVOKESTATIC, "mod/brasfoot/EaFcUiHelper", "applyInMatchLayout",
                                         "(Ljavax/swing/JPanel;Ljavax/swing/JLayeredPane;Ljavax/swing/JLabel;Ljavax/swing/JLabel;Ljavax/swing/JLabel;Ljavax/swing/JLabel;Ljavax/swing/JLabel;Ljavax/swing/JLabel;Ljavax/swing/JLabel;Ljavax/swing/JLabel;Ljavax/swing/JLabel;Ljavax/swing/JButton;Ljavax/swing/JComboBox;Ljavax/swing/JComboBox;Ljavax/swing/JComboBox;)V", false);
+                                }
+                                super.visitInsn(opcode);
+                            }
+                        };
+                    }
+
+                    if ("paintComponent".equals(name) && "(Ljava/awt/Graphics;)V".equals(desc)) {
+                        return new MethodVisitor(Opcodes.ASM5, mv) {
+                            @Override
+                            public void visitCode() {
+                                mv.visitVarInsn(Opcodes.ALOAD, 0);
+                                mv.visitVarInsn(Opcodes.ALOAD, 1);
+                                mv.visitMethodInsn(Opcodes.INVOKESTATIC, "mod/brasfoot/EaFcUiHelper", "paintModernInMatchBackground",
+                                    "(Ljavax/swing/JPanel;Ljava/awt/Graphics;)V", false);
+                                mv.visitInsn(Opcodes.RETURN);
+                            }
+                        };
+                    }
+
+                    if ("cS".equals(name) && "(I)V".equals(desc)) {
+                        return new MethodVisitor(Opcodes.ASM5, mv) {
+                            @Override
+                            public void visitInsn(int opcode) {
+                                if (opcode == Opcodes.RETURN) {
+                                    mv.visitVarInsn(Opcodes.ALOAD, 0);
+                                    mv.visitMethodInsn(Opcodes.INVOKESTATIC, "mod/brasfoot/EaFcUiHelper", "onInMatchTeamRefreshed",
+                                        "(Ljava/lang/Object;)V", false);
                                 }
                                 super.visitInsn(opcode);
                             }

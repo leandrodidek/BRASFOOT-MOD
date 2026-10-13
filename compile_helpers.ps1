@@ -17,7 +17,9 @@ Write-Host "Compiling mod helper classes using $javac..."
     "$PSScriptRoot\VarLogoBadge.java" `
     "$PSScriptRoot\VarOptionsHelper.java" `
     "$PSScriptRoot\UndoHelper.java" `
-    "$PSScriptRoot\PositionPenaltyHelper.java"
+    "$PSScriptRoot\PositionPenaltyHelper.java" `
+    "$PSScriptRoot\InMatchStatsPanel.java" `
+    "$PSScriptRoot\InMatchHudManager.java"
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "Classes successfully compiled into $out!" -ForegroundColor Green

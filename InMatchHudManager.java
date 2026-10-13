@@ -330,6 +330,7 @@ public class InMatchHudManager {
             Method switchM = cDObj.getClass().getDeclaredMethod("a", cDObj.getClass(), int.class);
             switchM.setAccessible(true);
             switchM.invoke(null, cDObj, next);
+            onTeamRefreshed(cDObj);
         } catch (Exception e) {
             e.printStackTrace();
         }

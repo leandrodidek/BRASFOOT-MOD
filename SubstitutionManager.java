@@ -162,6 +162,10 @@ public class SubstitutionManager {
                 csMethod.invoke(cDInstance, -1);
             } catch (Exception ignored) {}
 
+            try {
+                InMatchHudManager.onTeamRefreshed(cDInstance);
+            } catch (Exception ignored) {}
+
             // 5. Redesenha a tela
             if (cDInstance instanceof JComponent) {
                 ((JComponent) cDInstance).repaint();

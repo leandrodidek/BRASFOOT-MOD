@@ -407,19 +407,7 @@ public class FullEaFcInjector {
                         return new MethodVisitor(Opcodes.ASM5, null) {};
                     }
 
-                    if ("cS".equals(name) && "(I)V".equals(desc)) {
-                        return new MethodVisitor(Opcodes.ASM5, mv) {
-                            @Override
-                            public void visitInsn(int opcode) {
-                                if (opcode == Opcodes.RETURN) {
-                                    mv.visitVarInsn(Opcodes.ALOAD, 0);
-                                    mv.visitMethodInsn(Opcodes.INVOKESTATIC, "mod/brasfoot/EaFcUiHelper", "onInMatchTeamRefreshed",
-                                        "(Ljava/lang/Object;)V", false);
-                                }
-                                super.visitInsn(opcode);
-                            }
-                        };
-                    }
+
 
                     return mv;
                 }

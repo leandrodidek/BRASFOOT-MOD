@@ -396,16 +396,15 @@ public class FullEaFcInjector {
                     }
 
                     if ("paintComponent".equals(name) && "(Ljava/awt/Graphics;)V".equals(desc)) {
-                        return new MethodVisitor(Opcodes.ASM5, mv) {
-                            @Override
-                            public void visitCode() {
-                                mv.visitVarInsn(Opcodes.ALOAD, 0);
-                                mv.visitVarInsn(Opcodes.ALOAD, 1);
-                                mv.visitMethodInsn(Opcodes.INVOKESTATIC, "mod/brasfoot/EaFcUiHelper", "paintModernInMatchBackground",
-                                    "(Ljavax/swing/JPanel;Ljava/awt/Graphics;)V", false);
-                                mv.visitInsn(Opcodes.RETURN);
-                            }
-                        };
+                        mv.visitCode();
+                        mv.visitVarInsn(Opcodes.ALOAD, 0);
+                        mv.visitVarInsn(Opcodes.ALOAD, 1);
+                        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "mod/brasfoot/EaFcUiHelper", "paintModernInMatchBackground",
+                            "(Ljavax/swing/JPanel;Ljava/awt/Graphics;)V", false);
+                        mv.visitInsn(Opcodes.RETURN);
+                        mv.visitMaxs(2, 2);
+                        mv.visitEnd();
+                        return new MethodVisitor(Opcodes.ASM5, null) {};
                     }
 
                     if ("cS".equals(name) && "(I)V".equals(desc)) {

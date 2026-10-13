@@ -123,20 +123,25 @@ public class InMatchDualRadarPanel extends JPanel {
             textX = bx + 36;
         }
 
-        // Nome do Clube
-        g2.setFont(new Font("Verdana", Font.BOLD, 11));
-        g2.setColor(TEXT_WHITE);
-        String shortName = name;
-        if (shortName.length() > 11) {
-            shortName = shortName.substring(0, 9) + "..";
-        }
-        g2.drawString(shortName, textX, by + 24);
-
         // Badge do Overall (ex: 78)
         int badgeW = 34;
         int badgeH = 24;
         int badgeX = bx + bw - badgeW - 6;
         int badgeY = by + 7;
+
+        // Nome do Clube (Completo, sem abreviação!)
+        int availW = badgeX - textX - 4;
+        int fontSize = 11;
+        Font f = new Font("Verdana", Font.BOLD, fontSize);
+        FontMetrics fmN = g2.getFontMetrics(f);
+        while (fmN.stringWidth(name) > availW && fontSize > 8) {
+            fontSize--;
+            f = new Font("Verdana", Font.BOLD, fontSize);
+            fmN = g2.getFontMetrics(f);
+        }
+        g2.setFont(f);
+        g2.setColor(TEXT_WHITE);
+        g2.drawString(name, textX, by + 24);
 
         g2.setColor(new Color(teamColor.getRed(), teamColor.getGreen(), teamColor.getBlue(), 35));
         g2.fillRoundRect(badgeX, badgeY, badgeW, badgeH, 6, 6);

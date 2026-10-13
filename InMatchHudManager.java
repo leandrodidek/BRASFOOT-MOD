@@ -43,6 +43,10 @@ public class InMatchHudManager {
     private static JPanel scoreboardCard = null;
     private static JLabel lblScoreTimePeriod = null;
     private static JLabel lblScoreStadiumAtt = null;
+    private static JLabel lblScoreNameH = null;
+    private static JLabel lblScoreNameA = null;
+    private static JLabel lblScoreCrestH = null;
+    private static JLabel lblScoreCrestA = null;
 
     private static JPanel oppPreviewPanel = null;
     private static JPanel oppPitchComp = null;
@@ -52,6 +56,7 @@ public class InMatchHudManager {
 
     private static JLabel lblHomeHeader = null;
     private static JLabel lblAwayHeader = null;
+    private static JPanel userTacticsCard = null;
     private static JPanel oppInfoCard = null;
     private static JLabel lblOppCoach = null;
     private static JLabel lblOppFormation = null;
@@ -224,50 +229,26 @@ public class InMatchHudManager {
             // =========================================================
             // 5. CONTROLES TÁTICOS (ABAIXO DO CAMPO DO MANDANTE/USUÁRIO)
             // =========================================================
-            if (subsLbl != null) {
-                subsLbl.setFont(new Font("Verdana", Font.BOLD, 12));
-                subsLbl.setForeground(EMERALD);
-                subsLbl.setBounds(25, 696, 280, 22);
+            if (userTacticsCard == null) {
+                userTacticsCard = buildUserTacticsCard(subsLbl, coachLbl, lblEstilo, cbEstilo, lblMarcacao, cbMarcacao, lblAtaque, cbAtaque);
             }
-
-            if (coachLbl != null) {
-                coachLbl.setFont(new Font("Verdana", Font.BOLD, 11));
-                coachLbl.setForeground(TEXT_MUTED);
-                coachLbl.setBounds(330, 696, 310, 22);
+            int cardUserX = (activeTeam == 1) ? 20 : 1100;
+            userTacticsCard.setBounds(cardUserX, 696, 620, 165);
+            if (!isChildOf(root, userTacticsCard)) {
+                root.add(userTacticsCard);
             }
-
-            styleLabel(lblEstilo, "Estilo de jogo:");
-            styleLabel(lblMarcacao, "Marcação:");
-            styleLabel(lblAtaque, "Concentrar ataques:");
-
-            EaFcUiHelper.styleModernComboBox(cbEstilo);
-            EaFcUiHelper.styleModernComboBox(cbMarcacao);
-            EaFcUiHelper.styleModernComboBox(cbAtaque);
-
-            int comboY = 746;
-            int lblY = 726;
-            int colW = 195;
-
-            if (lblEstilo != null) lblEstilo.setBounds(25, lblY, colW, 18);
-            if (cbEstilo != null) cbEstilo.setBounds(25, comboY, colW, 30);
-
-            if (lblMarcacao != null) lblMarcacao.setBounds(230, lblY, colW, 18);
-            if (cbMarcacao != null) cbMarcacao.setBounds(230, comboY, colW, 30);
-
-            if (lblAtaque != null) lblAtaque.setBounds(435, lblY, 205, 18);
-            if (cbAtaque != null) cbAtaque.setBounds(435, comboY, 205, 30);
 
             // =========================================================
             // 6. HUB ANALÍTICO CENTRAL (x: 650, w: 440)
             // =========================================================
 
-            // 6.1 Placar Broadcast TV (y: 10, h: 95)
+            // 6.1 Placar Broadcast TV Estilo Real (y: 10, h: 96)
             if (scoreboardCard == null) {
                 scoreboardCard = buildScoreboardCard(cDObj, match, scoreHome, scoreAway, matchTime, matchPeriod, stadiumLbl, attLbl);
             } else {
                 updateScoreboardValues(match, scoreHome, scoreAway, matchTime, matchPeriod, stadiumLbl, attLbl);
             }
-            scoreboardCard.setBounds(650, 10, 440, 95);
+            scoreboardCard.setBounds(650, 10, 440, 96);
             if (!isChildOf(root, scoreboardCard)) {
                 root.add(scoreboardCard);
             }
@@ -298,19 +279,20 @@ public class InMatchHudManager {
                 root.add(radarPanel);
             }
 
-            // 6.5 Botão de Ação "VOLTAR AO JOGO" (y: 792, h: 46)
+            // 6.5 Botão de Ação "VOLTAR AO JOGO" (y: 794, h: 52)
             if (btnVoltar != null) {
-                btnVoltar.setBounds(670, 792, 400, 46);
+                btnVoltar.setBounds(670, 794, 400, 52);
                 EaFcUiHelper.styleActionPillButton(btnVoltar, "< VOLTAR AO JOGO", true);
             }
 
-            // 7. Painel de Resumo Tático do Adversário (abaixo do campo adversário)
+            // 7. Painel de Resumo Tático do Adversário (abaixo do campo adversário - y: 696, h: 165)
             if (oppInfoCard == null) {
                 oppInfoCard = buildOpponentInfoCard(match, formOppLbl);
             } else {
                 updateOpponentInfo(match, formOppLbl);
             }
-            oppInfoCard.setBounds(1100, 696, 620, 80);
+            int cardOppX = (activeTeam == 1) ? 1100 : 20;
+            oppInfoCard.setBounds(cardOppX, 696, 620, 165);
             if (!isChildOf(root, oppInfoCard)) {
                 root.add(oppInfoCard);
             }
@@ -339,6 +321,16 @@ public class InMatchHudManager {
                 } else {
                     df.setBounds(1100, 38, 620, 650);
                     oppPreviewPanel.setBounds(20, 38, 620, 650);
+                }
+            }
+
+            if (userTacticsCard != null && oppInfoCard != null) {
+                if (activeTeam == 1) {
+                    userTacticsCard.setBounds(20, 696, 620, 165);
+                    oppInfoCard.setBounds(1100, 696, 620, 165);
+                } else {
+                    userTacticsCard.setBounds(1100, 696, 620, 165);
+                    oppInfoCard.setBounds(20, 696, 620, 165);
                 }
             }
 
@@ -439,7 +431,8 @@ public class InMatchHudManager {
     }
 
     /**
-     * Constrói o Card do Placar estilo TV Broadcast EA FC.
+     * Constrói o Card do Placar estilo TV Broadcast EA FC (Premier League / La Liga).
+     * Exibe nomes completos dos times (sem abreviação), escudos, caixas de gols translúcidas e cronômetro.
      */
     private static JPanel buildScoreboardCard(
             Object cDObj, best.I match,
@@ -456,56 +449,99 @@ public class InMatchHudManager {
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
                 g2.setColor(BORDER_SLATE);
                 g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 12, 12);
+
+                // Barra Broadcast Interna
+                g2.setColor(new Color(15, 23, 42));
+                g2.fillRoundRect(8, 10, 424, 52, 8, 8);
+                g2.setColor(new Color(51, 65, 85));
+                g2.drawRoundRect(8, 10, 424, 52, 8, 8);
+
+                // Caixa do Placar Mandante
+                g2.setColor(new Color(24, 33, 52));
+                g2.fillRoundRect(148, 16, 36, 36, 6, 6);
+                g2.setColor(new Color(71, 85, 105));
+                g2.drawRoundRect(148, 16, 36, 36, 6, 6);
+
+                // Pill Central do Cronômetro
+                g2.setColor(new Color(16, 185, 129, 30));
+                g2.fillRoundRect(188, 19, 64, 30, 6, 6);
+                g2.setColor(new Color(16, 185, 129));
+                g2.drawRoundRect(188, 19, 64, 30, 6, 6);
+
+                // Caixa do Placar Visitante
+                g2.setColor(new Color(24, 33, 52));
+                g2.fillRoundRect(256, 16, 36, 36, 6, 6);
+                g2.setColor(new Color(71, 85, 105));
+                g2.drawRoundRect(256, 16, 36, 36, 6, 6);
+
                 g2.dispose();
             }
         };
         card.setOpaque(false);
 
-        // Escudos dos times
-        ImageIcon crestH = (match != null && match.hc() != null) ? match.hc().x(36, 36) : null;
-        ImageIcon crestA = (match != null && match.hd() != null) ? match.hd().x(36, 36) : null;
+        String homeName = (match != null && match.hc() != null) ? match.hc().getNome() : "MANDANTE";
+        String awayName = (match != null && match.hd() != null) ? match.hd().getNome() : "VISITANTE";
+        ImageIcon crestH = (match != null && match.hc() != null) ? match.hc().x(24, 24) : null;
+        ImageIcon crestA = (match != null && match.hd() != null) ? match.hd().x(24, 24) : null;
 
-        JLabel lblCrestH = new JLabel(crestH);
-        lblCrestH.setBounds(40, 14, 36, 36);
-        card.add(lblCrestH);
+        // Escudo Mandante
+        lblScoreCrestH = new JLabel(crestH);
+        lblScoreCrestH.setBounds(14, 24, 24, 24);
+        card.add(lblScoreCrestH);
 
-        JLabel lblCrestA = new JLabel(crestA);
-        lblCrestA.setBounds(364, 14, 36, 36);
-        card.add(lblCrestA);
+        // Nome Mandante (Completo, auto-escala de fonte se for extenso)
+        lblScoreNameH = new JLabel(homeName);
+        int hLen = homeName.length();
+        lblScoreNameH.setFont(new Font("Segoe UI", Font.BOLD, hLen > 15 ? 10 : (hLen > 11 ? 11 : 12)));
+        lblScoreNameH.setForeground(TEXT_WHITE);
+        lblScoreNameH.setBounds(42, 17, 102, 36);
+        card.add(lblScoreNameH);
 
-        // Placares (Dw e Dx) perfeitamente centralizados
+        // Placar Mandante (Sem caixa preta sólida opaca do Brasfoot)
         if (sHome != null) {
-            sHome.setFont(new Font("Segoe UI", Font.BOLD, 30));
+            sHome.setOpaque(false);
+            sHome.setBackground(new Color(0, 0, 0, 0));
+            sHome.setFont(new Font("Segoe UI", Font.BOLD, 20));
             sHome.setForeground(TEXT_WHITE);
-            sHome.setHorizontalAlignment(SwingConstants.RIGHT);
-            sHome.setBounds(95, 10, 65, 42);
+            sHome.setHorizontalAlignment(SwingConstants.CENTER);
+            sHome.setBounds(148, 16, 36, 36);
             card.add(sHome);
         }
 
-        JLabel lblX = new JLabel("x");
-        lblX.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        lblX.setForeground(TEXT_MUTED);
-        lblX.setHorizontalAlignment(SwingConstants.CENTER);
-        lblX.setBounds(205, 16, 30, 30);
-        card.add(lblX);
+        // Pill Central do Cronômetro
+        String tText = (mTime != null && mTime.getText() != null) ? mTime.getText() : "0'";
+        String pText = (mPeriod != null && mPeriod.getText() != null) ? mPeriod.getText() : "1º";
+        lblScoreTimePeriod = new JLabel(tText + " • " + pText);
+        lblScoreTimePeriod.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        lblScoreTimePeriod.setForeground(EMERALD);
+        lblScoreTimePeriod.setHorizontalAlignment(SwingConstants.CENTER);
+        lblScoreTimePeriod.setBounds(188, 19, 64, 30);
+        card.add(lblScoreTimePeriod);
 
+        // Placar Visitante (Sem caixa preta sólida opaca do Brasfoot)
         if (sAway != null) {
-            sAway.setFont(new Font("Segoe UI", Font.BOLD, 30));
+            sAway.setOpaque(false);
+            sAway.setBackground(new Color(0, 0, 0, 0));
+            sAway.setFont(new Font("Segoe UI", Font.BOLD, 20));
             sAway.setForeground(TEXT_WHITE);
-            sAway.setHorizontalAlignment(SwingConstants.LEFT);
-            sAway.setBounds(280, 10, 65, 42);
+            sAway.setHorizontalAlignment(SwingConstants.CENTER);
+            sAway.setBounds(256, 16, 36, 36);
             card.add(sAway);
         }
 
-        // Tempo Decorrido & Período (46' • 1º)
-        String tText = (mTime != null && mTime.getText() != null) ? mTime.getText() : "0'";
-        String pText = (mPeriod != null && mPeriod.getText() != null) ? mPeriod.getText() : "1º";
-        lblScoreTimePeriod = new JLabel(tText + "  •  " + pText);
-        lblScoreTimePeriod.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lblScoreTimePeriod.setForeground(EMERALD);
-        lblScoreTimePeriod.setHorizontalAlignment(SwingConstants.CENTER);
-        lblScoreTimePeriod.setBounds(120, 52, 200, 18);
-        card.add(lblScoreTimePeriod);
+        // Nome Visitante (Completo, auto-escala de fonte se for extenso)
+        lblScoreNameA = new JLabel(awayName);
+        int aLen = awayName.length();
+        lblScoreNameA.setFont(new Font("Segoe UI", Font.BOLD, aLen > 15 ? 10 : (aLen > 11 ? 11 : 12)));
+        lblScoreNameA.setForeground(TEXT_WHITE);
+        lblScoreNameA.setHorizontalAlignment(SwingConstants.RIGHT);
+        lblScoreNameA.setBounds(296, 17, 102, 36);
+        card.add(lblScoreNameA);
+
+        // Escudo Visitante
+        lblScoreCrestA = new JLabel(crestA);
+        lblScoreCrestA.setBounds(402, 24, 24, 24);
+        card.add(lblScoreCrestA);
 
         // Estádio e Público / Torcedores Integrados na Base
         String stadText = (stadium != null && stadium.getText() != null) ? stadium.getText() : "Estádio";
@@ -518,7 +554,7 @@ public class InMatchHudManager {
         lblScoreStadiumAtt.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         lblScoreStadiumAtt.setForeground(TEXT_MUTED);
         lblScoreStadiumAtt.setHorizontalAlignment(SwingConstants.CENTER);
-        lblScoreStadiumAtt.setBounds(10, 72, 420, 18);
+        lblScoreStadiumAtt.setBounds(10, 70, 420, 20);
         card.add(lblScoreStadiumAtt);
 
         return card;
@@ -531,10 +567,18 @@ public class InMatchHudManager {
     ) {
         if (scoreboardCard == null) return;
         try {
+            if (sHome != null) {
+                sHome.setOpaque(false);
+                sHome.setBackground(new Color(0, 0, 0, 0));
+            }
+            if (sAway != null) {
+                sAway.setOpaque(false);
+                sAway.setBackground(new Color(0, 0, 0, 0));
+            }
             if (lblScoreTimePeriod != null) {
                 String tText = (mTime != null && mTime.getText() != null) ? mTime.getText() : "0'";
                 String pText = (mPeriod != null && mPeriod.getText() != null) ? mPeriod.getText() : "1º";
-                lblScoreTimePeriod.setText(tText + "  •  " + pText);
+                lblScoreTimePeriod.setText(tText + " • " + pText);
             }
             if (lblScoreStadiumAtt != null) {
                 String stadText = (stadium != null && stadium.getText() != null) ? stadium.getText() : "Estádio";
@@ -544,6 +588,20 @@ public class InMatchHudManager {
                     fullInfo += "   •   " + attText + " torcedores";
                 }
                 lblScoreStadiumAtt.setText(fullInfo);
+            }
+            if (match != null) {
+                if (lblScoreNameH != null && match.hc() != null) {
+                    String hName = match.hc().getNome();
+                    lblScoreNameH.setText(hName);
+                    int hLen = hName.length();
+                    lblScoreNameH.setFont(new Font("Segoe UI", Font.BOLD, hLen > 15 ? 10 : (hLen > 11 ? 11 : 12)));
+                }
+                if (lblScoreNameA != null && match.hd() != null) {
+                    String aName = match.hd().getNome();
+                    lblScoreNameA.setText(aName);
+                    int aLen = aName.length();
+                    lblScoreNameA.setFont(new Font("Segoe UI", Font.BOLD, aLen > 15 ? 10 : (aLen > 11 ? 11 : 12)));
+                }
             }
         } catch (Exception ignored) {}
         scoreboardCard.repaint();
@@ -647,6 +705,111 @@ public class InMatchHudManager {
         return slots;
     }
 
+    private static JPanel buildUserTacticsCard(
+            JLabel subsLbl, JLabel coachLbl,
+            JLabel lblEstilo, JComboBox<?> cbEstilo,
+            JLabel lblMarcacao, JComboBox<?> cbMarcacao,
+            JLabel lblAtaque, JComboBox<?> cbAtaque
+    ) {
+        JPanel card = new JPanel(null) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                EaFcUiHelper.applyHighQualityRendering(g2);
+                g2.setColor(PANEL_DARK);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+                g2.setColor(BORDER_SLATE);
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 12, 12);
+                g2.dispose();
+            }
+        };
+        card.setOpaque(false);
+
+        JLabel lblTitle = new JLabel("SUAS INSTRUÇÕES TÁTICAS");
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        lblTitle.setForeground(TEXT_MUTED);
+        lblTitle.setBounds(15, 12, 250, 20);
+        card.add(lblTitle);
+
+        if (subsLbl != null) {
+            subsLbl.setFont(new Font("Segoe UI", Font.BOLD, 11));
+            subsLbl.setForeground(EMERALD);
+            subsLbl.setHorizontalAlignment(SwingConstants.RIGHT);
+            subsLbl.setBounds(430, 10, 175, 24);
+            card.add(subsLbl);
+        }
+
+        if (coachLbl != null) {
+            coachLbl.setFont(new Font("Verdana", Font.BOLD, 12));
+            coachLbl.setForeground(TEXT_WHITE);
+            coachLbl.setBounds(15, 38, 250, 20);
+            card.add(coachLbl);
+        }
+
+        JLabel lblFocus = new JLabel("Foco: Equilíbrio e Posse");
+        lblFocus.setFont(new Font("Verdana", Font.PLAIN, 11));
+        lblFocus.setForeground(TEXT_MUTED);
+        lblFocus.setBounds(280, 38, 250, 20);
+        card.add(lblFocus);
+
+        styleLabel(lblEstilo, "Estilo de jogo:");
+        styleLabel(lblMarcacao, "Marcação:");
+        styleLabel(lblAtaque, "Concentrar ataques:");
+
+        EaFcUiHelper.styleModernComboBox(cbEstilo);
+        EaFcUiHelper.styleModernComboBox(cbMarcacao);
+        EaFcUiHelper.styleModernComboBox(cbAtaque);
+
+        if (lblEstilo != null) { lblEstilo.setBounds(15, 66, 185, 16); card.add(lblEstilo); }
+        if (cbEstilo != null) { cbEstilo.setBounds(15, 86, 185, 32); card.add(cbEstilo); }
+
+        if (lblMarcacao != null) { lblMarcacao.setBounds(215, 66, 185, 16); card.add(lblMarcacao); }
+        if (cbMarcacao != null) { cbMarcacao.setBounds(215, 86, 185, 32); card.add(cbMarcacao); }
+
+        if (lblAtaque != null) { lblAtaque.setBounds(415, 66, 190, 16); card.add(lblAtaque); }
+        if (cbAtaque != null) { cbAtaque.setBounds(415, 86, 190, 32); card.add(cbAtaque); }
+
+        JLabel lblTip = new JLabel("⚡ As alterações táticas entram em vigor imediatamente após o reinício da partida.");
+        lblTip.setFont(new Font("Verdana", Font.PLAIN, 10));
+        lblTip.setForeground(TEXT_MUTED);
+        lblTip.setBounds(15, 134, 580, 18);
+        card.add(lblTip);
+
+        return card;
+    }
+
+    private static JPanel createOppStatBox(String title, String value) {
+        JPanel box = new JPanel(null) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                EaFcUiHelper.applyHighQualityRendering(g2);
+                g2.setColor(CARD_BG);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.setColor(BORDER_SLATE);
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 8, 8);
+                g2.dispose();
+            }
+        };
+        box.setOpaque(false);
+
+        JLabel lblT = new JLabel(title);
+        lblT.setFont(new Font("Segoe UI", Font.BOLD, 9));
+        lblT.setForeground(TEXT_MUTED);
+        lblT.setBounds(10, 6, 170, 16);
+        box.add(lblT);
+
+        JLabel lblV = new JLabel(value);
+        lblV.setFont(new Font("Verdana", Font.BOLD, 11));
+        lblV.setForeground(TEXT_WHITE);
+        lblV.setBounds(10, 24, 170, 24);
+        box.add(lblV);
+
+        return box;
+    }
+
     private static JPanel buildOpponentInfoCard(best.I match, JLabel formLbl) {
         JPanel card = new JPanel(null) {
             @Override
@@ -655,9 +818,9 @@ public class InMatchHudManager {
                 Graphics2D g2 = (Graphics2D) g.create();
                 EaFcUiHelper.applyHighQualityRendering(g2);
                 g2.setColor(PANEL_DARK);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
                 g2.setColor(BORDER_SLATE);
-                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 12, 12);
                 g2.dispose();
             }
         };
@@ -675,20 +838,51 @@ public class InMatchHudManager {
         JLabel lblTitle = new JLabel("COMANDO TÉCNICO & ESTRATÉGIA DO ADVERSÁRIO");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 11));
         lblTitle.setForeground(TEXT_MUTED);
-        lblTitle.setBounds(15, 10, 400, 20);
+        lblTitle.setBounds(15, 12, 350, 20);
         card.add(lblTitle);
+
+        // Badge CPU
+        JLabel lblCpuBadge = new JLabel("CPU / ADVERSÁRIO");
+        lblCpuBadge.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        lblCpuBadge.setForeground(GOLD_ACCENT);
+        lblCpuBadge.setHorizontalAlignment(SwingConstants.CENTER);
+        lblCpuBadge.setBounds(460, 10, 145, 24);
+        lblCpuBadge.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(GOLD_ACCENT, 1, true),
+            BorderFactory.createEmptyBorder(2, 6, 2, 6)
+        ));
+        card.add(lblCpuBadge);
 
         lblOppCoach = new JLabel("Técnico: " + coach);
         lblOppCoach.setFont(new Font("Verdana", Font.BOLD, 12));
         lblOppCoach.setForeground(TEXT_WHITE);
-        lblOppCoach.setBounds(15, 34, 300, 20);
+        lblOppCoach.setBounds(15, 38, 250, 20);
         card.add(lblOppCoach);
 
         lblOppFormation = new JLabel("Esquema Tático: " + formation);
-        lblOppFormation.setFont(new Font("Verdana", Font.PLAIN, 11));
+        lblOppFormation.setFont(new Font("Verdana", Font.BOLD, 12));
         lblOppFormation.setForeground(GOLD_ACCENT);
-        lblOppFormation.setBounds(330, 34, 250, 20);
+        lblOppFormation.setBounds(280, 38, 250, 20);
         card.add(lblOppFormation);
+
+        // 3 caixas de status tático
+        JPanel box1 = createOppStatBox("POSTURA DEFENSIVA", "Linhas Compactas");
+        box1.setBounds(15, 66, 185, 56);
+        card.add(box1);
+
+        JPanel box2 = createOppStatBox("CRIAÇÃO DE JOGADAS", "Transição Rápida");
+        box2.setBounds(215, 66, 185, 56);
+        card.add(box2);
+
+        JPanel box3 = createOppStatBox("SUBSTITUIÇÕES", "0 de 5 realizadas");
+        box3.setBounds(415, 66, 190, 56);
+        card.add(box3);
+
+        JLabel lblOppTip = new JLabel("📊 Inteligência tática calculada ao vivo conforme o andamento da partida.");
+        lblOppTip.setFont(new Font("Verdana", Font.PLAIN, 10));
+        lblOppTip.setForeground(TEXT_MUTED);
+        lblOppTip.setBounds(15, 134, 580, 18);
+        card.add(lblOppTip);
 
         return card;
     }

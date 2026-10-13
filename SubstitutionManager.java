@@ -42,6 +42,11 @@ public class SubstitutionManager {
             System.out.println("[SubstitutionManager] Session started. Initial starters recorded -> Mandante: " 
                 + initialStartersMandante.size() + ", Visitante: " + initialStartersVisitante.size());
 
+            // Garante que o HUD widescreen atualize com ambos os times já carregados na abertura
+            try {
+                InMatchHudManager.onTeamRefreshed(cDInstance);
+            } catch (Exception ignored) {}
+
         } catch (Exception e) {
             e.printStackTrace();
         }

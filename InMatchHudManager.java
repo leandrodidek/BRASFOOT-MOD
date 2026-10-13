@@ -13,10 +13,13 @@ import javax.swing.table.TableCellRenderer;
 
 /**
  * Gerenciador Mestre da Tela de Treinador Durante a Partida (cD).
- * Implementa a refatoração Widescreen Full HD (1740 x 880) do Design System EA FC:
+ * Refatoração Widescreen Full HD (1740 x 880) - EA FC Console HUD:
  * - Dois campos simultâneos (Mandante à esquerda, Visitante à direita)
- * - Hub Central: Placar Broadcast -> Log de Eventos -> Stats em Barras -> Radar Tático -> Voltar ao Jogo
- * - Eliminação completa do fundo verde textura/madeira (/img/f02.jpg)
+ * - Ambos os campos utilizando o mesmo gramado selecionado no pré-jogo
+ * - Fundos dos bancos de reservas na cor pura da interface (sem textura verde escura)
+ * - Placar estilo Broadcast TV com Estádio e Público integrados
+ * - Radar Tático Duplo Comparativo Sobreposto (sem info interna no centro e sem barras laterais)
+ * - Botão "< VOLTAR AO JOGO" centralizado e harmonioso
  */
 public class InMatchHudManager {
 
@@ -36,15 +39,22 @@ public class InMatchHudManager {
 
     // Componentes Customizados Integrados
     private static InMatchStatsPanel statsPanel = null;
-    private static TacticalRadarPanel radarPanel = null;
+    private static InMatchDualRadarPanel radarPanel = null;
     private static JPanel scoreboardCard = null;
+    private static JLabel lblScoreTimePeriod = null;
+    private static JLabel lblScoreStadiumAtt = null;
+
     private static JPanel oppPreviewPanel = null;
-    private static JLabel oppPitchLabel = null;
+    private static JPanel oppPitchComp = null;
     private static JLabel oppBenchLabel = null;
+    private static Image currentPitchBg = null;
+    private static Image currentOppPlayersImg = null;
 
     private static JLabel lblHomeHeader = null;
     private static JLabel lblAwayHeader = null;
     private static JPanel oppInfoCard = null;
+    private static JLabel lblOppCoach = null;
+    private static JLabel lblOppFormation = null;
 
     /**
      * Configura todo o layout widescreen da tela de treinador durante a partida.
@@ -76,12 +86,13 @@ public class InMatchHudManager {
 
             JLabel scoreHome = (JLabel) getFieldValue(cDObj, "Dw");
             JLabel scoreAway = (JLabel) getFieldValue(cDObj, "Dx");
-            JLabel matchTime = (JLabel) getFieldValue(cDObj, "zO");
-            JLabel matchPeriod = (JLabel) getFieldValue(cDObj, "zP");
+            JLabel matchTime = (JLabel) getFieldValue(cDObj, "Dv");   // Dv é o tempo real (ex: 46')
+            JLabel matchPeriod = (JLabel) getFieldValue(cDObj, "DE"); // DE é o período real (ex: 1º)
 
-            JLabel stadiumLbl = (JLabel) getFieldValue(cDObj, "Dv");
-            JLabel attLbl = (JLabel) getFieldValue(cDObj, "DE");
-            JLabel revLbl = (JLabel) getFieldValue(cDObj, "xI");
+            JLabel stadiumLbl = (JLabel) getFieldValue(cDObj, "Cg"); // Cg é o estádio real
+            JLabel attLbl = (JLabel) getFieldValue(cDObj, "Dy");     // Dy é o público/torcedores real
+            JLabel revLbl = (JLabel) getFieldValue(cDObj, "xI");     // posse de bola antiga
+            JLabel formOppLbl = (JLabel) getFieldValue(cDObj, "DC"); // Formação adversária
 
             JButton btnVoltar = (JButton) getFieldValue(cDObj, "Dm");
             JComboBox cbEstilo = (JComboBox) getFieldValue(cDObj, "Do");
@@ -100,10 +111,18 @@ public class InMatchHudManager {
 
             int activeTeam = getIntField(cDObj, "Di", 1); // 1 = Casa, 2 = Fora
 
-            // Esconde labels nativas antigas de fundo ou irrelevantes
+            // Esconde componentes nativos antigos de fundo ou redundantes
             hideComponent((Component) getFieldValue(cDObj, "vd"));
             hideComponent((Component) getFieldValue(cDObj, "we"));
-            hideComponent(revLbl); // substituído pelo painel de stats
+            hideComponent((Component) getFieldValue(cDObj, "zO")); // banner branco antigo
+            hideComponent((Component) getFieldValue(cDObj, "zP")); // banner branco antigo
+            hideComponent((Component) getFieldValue(cDObj, "Dl")); // label antiga
+            hideComponent((Component) getFieldValue(cDObj, "ug")); // fundo semi antigo
+            hideComponent((Component) getFieldValue(cDObj, "Dt")); // jLabel2 antigo
+            hideComponent((Component) getFieldValue(cDObj, "Du")); // jLabel2 antigo
+            hideComponent((Component) getFieldValue(cDObj, "Dr")); // jLabel2 antigo
+            hideComponent((Component) getFieldValue(cDObj, "Dz")); // renda label
+            hideComponent(revLbl);
 
             // =========================================================
             // 2. CABEÇALHOS DOS TIMES (MANDANTE & VISITANTE)
@@ -118,10 +137,10 @@ public class InMatchHudManager {
                 lblHomeHeader.setFont(new Font("Verdana", Font.BOLD, 13));
                 lblHomeHeader.setForeground(TEXT_WHITE);
             }
-            lblHomeHeader.setText("  " + homeName.toUpperCase() + "  [MANDANTE]");
+            lblHomeHeader.setText("  " + homeName.toUpperCase());
             lblHomeHeader.setIcon(homeCrest);
             lblHomeHeader.setBounds(20, 8, 620, 28);
-            root.add(lblHomeHeader);
+            if (!isChildOf(root, lblHomeHeader)) root.add(lblHomeHeader);
 
             if (lblAwayHeader == null) {
                 lblAwayHeader = new JLabel();
@@ -129,42 +148,69 @@ public class InMatchHudManager {
                 lblAwayHeader.setForeground(TEXT_WHITE);
                 lblAwayHeader.setHorizontalAlignment(SwingConstants.RIGHT);
             }
-            lblAwayHeader.setText("[VISITANTE]  " + awayName.toUpperCase() + "  ");
+            lblAwayHeader.setText(awayName.toUpperCase() + "  ");
             lblAwayHeader.setIcon(awayCrest);
             lblAwayHeader.setHorizontalTextPosition(SwingConstants.LEFT);
             lblAwayHeader.setBounds(1100, 8, 620, 28);
-            root.add(lblAwayHeader);
+            if (!isChildOf(root, lblAwayHeader)) root.add(lblAwayHeader);
 
             // =========================================================
-            // 3. CAMPOS DE JOGO (DF INTERATIVO + PAINEL DO ADVERSÁRIO)
+            // 3. BANCO E CAMPO DO USUÁRIO
             // =========================================================
-            // Configura o painel preview do adversário se ainda não criado
+            // Remove a textura verde escura de madeira do banco do usuário
+            if (dqBench != null) {
+                dqBench.setIcon(null);
+                dqBench.setOpaque(true);
+                dqBench.setBackground(BG_DEEP);
+            }
+
+            // =========================================================
+            // 4. CAMPO DO ADVERSÁRIO (COM GRAMADO IDÊNTICO AO DO USUÁRIO)
+            // =========================================================
             if (oppPreviewPanel == null) {
                 oppPreviewPanel = new JPanel(null);
                 oppPreviewPanel.setOpaque(false);
 
+                // Banco de reservas do adversário (fundo puro da interface)
                 oppBenchLabel = new JLabel();
                 oppBenchLabel.setBounds(0, 0, 210, 650);
+                oppBenchLabel.setOpaque(true);
+                oppBenchLabel.setBackground(BG_DEEP);
                 oppPreviewPanel.add(oppBenchLabel);
 
-                oppPitchLabel = new JLabel();
-                oppPitchLabel.setBounds(200, 0, 420, 650);
-                oppPreviewPanel.add(oppPitchLabel);
-
-                oppPreviewPanel.addMouseListener(new MouseAdapter() {
+                // Campo do adversário: pinta a grama igual ao do usuário + cards dos atletas por cima
+                oppPitchComp = new JPanel(null) {
                     @Override
-                    public void mouseClicked(MouseEvent e) {
-                        switchActiveTeam(cDObj);
+                    protected void paintComponent(Graphics g) {
+                        super.paintComponent(g);
+                        Graphics2D g2 = (Graphics2D) g.create();
+                        EaFcUiHelper.applyHighQualityRendering(g2);
+                        if (currentPitchBg != null) {
+                            g2.drawImage(currentPitchBg, 0, 0, getWidth(), getHeight(), null);
+                        } else {
+                            g2.setColor(new Color(24, 75, 35));
+                            g2.fillRect(0, 0, getWidth(), getHeight());
+                        }
+                        if (currentOppPlayersImg != null) {
+                            g2.drawImage(currentOppPlayersImg, 0, 0, null);
+                        }
+                        g2.dispose();
                     }
-                });
+                };
+                oppPitchComp.setBounds(200, 0, 420, 650);
+                oppPitchComp.setOpaque(false);
+                oppPreviewPanel.add(oppPitchComp);
+            }
+
+            // Pega o gramado oficial de dsPitch
+            if (dsPitch != null && dsPitch.getIcon() instanceof ImageIcon) {
+                currentPitchBg = ((ImageIcon) dsPitch.getIcon()).getImage();
             }
 
             if (activeTeam == 1) {
-                // Usuário focado no Mandante: DF na esquerda, Adversário na direita
                 if (df != null) df.setBounds(20, 38, 620, 650);
                 oppPreviewPanel.setBounds(1100, 38, 620, 650);
             } else {
-                // Usuário focado no Visitante: DF na direita, Adversário na esquerda
                 if (df != null) df.setBounds(1100, 38, 620, 650);
                 oppPreviewPanel.setBounds(20, 38, 620, 650);
             }
@@ -176,7 +222,7 @@ public class InMatchHudManager {
             refreshOpponentPitch(cDObj, activeTeam);
 
             // =========================================================
-            // 4. CONTROLES TÁTICOS (ABAIXO DO CAMPO DO MANDANTE/USUÁRIO)
+            // 5. CONTROLES TÁTICOS (ABAIXO DO CAMPO DO MANDANTE/USUÁRIO)
             // =========================================================
             if (subsLbl != null) {
                 subsLbl.setFont(new Font("Verdana", Font.BOLD, 12));
@@ -212,10 +258,10 @@ public class InMatchHudManager {
             if (cbAtaque != null) cbAtaque.setBounds(435, comboY, 205, 30);
 
             // =========================================================
-            // 5. HUB ANALÍTICO CENTRAL (x: 650, w: 440)
+            // 6. HUB ANALÍTICO CENTRAL (x: 650, w: 440)
             // =========================================================
 
-            // 5.1 Placar Broadcast TV (y: 10, h: 95)
+            // 6.1 Placar Broadcast TV (y: 10, h: 95)
             if (scoreboardCard == null) {
                 scoreboardCard = buildScoreboardCard(cDObj, match, scoreHome, scoreAway, matchTime, matchPeriod, stadiumLbl, attLbl);
             } else {
@@ -226,41 +272,43 @@ public class InMatchHudManager {
                 root.add(scoreboardCard);
             }
 
-            // 5.2 Log de Eventos da Partida (y: 112, h: 180)
+            // 6.2 Log de Eventos da Partida (y: 112, h: 180)
             if (scrollEvents != null) {
                 scrollEvents.setBounds(650, 112, 440, 180);
                 styleEventsTable(scrollEvents, tableEvents);
             }
 
-            // 5.3 Estatísticas Comparativas em Barras (y: 298, h: 190)
+            // 6.3 Estatísticas Comparativas em Barras (y: 298, h: 180)
             if (statsPanel == null) {
                 statsPanel = new InMatchStatsPanel();
             }
-            statsPanel.setBounds(650, 298, 440, 190);
+            statsPanel.setBounds(650, 298, 440, 180);
             if (match != null) statsPanel.updateStats(match);
             if (!isChildOf(root, statsPanel)) {
                 root.add(statsPanel);
             }
 
-            // 5.4 Radar Tático Hexagonal (y: 494, h: 290)
+            // 6.4 Radar Tático Hexagonal Comparativo Sobreposto (y: 485, h: 295)
             if (radarPanel == null) {
-                radarPanel = new TacticalRadarPanel();
+                radarPanel = new InMatchDualRadarPanel();
             }
-            radarPanel.setBounds(650, 494, 440, 290);
+            radarPanel.setBounds(650, 485, 440, 295);
             updateRadarStats(cDObj, match);
             if (!isChildOf(root, radarPanel)) {
                 root.add(radarPanel);
             }
 
-            // 5.5 Botão de Ação "VOLTAR AO JOGO" (y: 794, h: 42)
+            // 6.5 Botão de Ação "VOLTAR AO JOGO" (y: 792, h: 46)
             if (btnVoltar != null) {
-                btnVoltar.setBounds(745, 794, 250, 42);
+                btnVoltar.setBounds(670, 792, 400, 46);
                 EaFcUiHelper.styleActionPillButton(btnVoltar, "< VOLTAR AO JOGO", true);
             }
 
-            // 6. Painel de Resumo do Adversário (abaixo do campo visitante)
+            // 7. Painel de Resumo Tático do Adversário (abaixo do campo adversário)
             if (oppInfoCard == null) {
-                oppInfoCard = buildOpponentInfoCard(match);
+                oppInfoCard = buildOpponentInfoCard(match, formOppLbl);
+            } else {
+                updateOpponentInfo(match, formOppLbl);
             }
             oppInfoCard.setBounds(1100, 696, 620, 80);
             if (!isChildOf(root, oppInfoCard)) {
@@ -294,6 +342,18 @@ public class InMatchHudManager {
                 }
             }
 
+            JLabel dsPitch = (JLabel) getFieldValue(cDObj, "Ds");
+            JLabel dqBench = (JLabel) getFieldValue(cDObj, "Dq");
+            if (dqBench != null) {
+                dqBench.setIcon(null);
+                dqBench.setOpaque(true);
+                dqBench.setBackground(BG_DEEP);
+            }
+
+            if (dsPitch != null && dsPitch.getIcon() instanceof ImageIcon) {
+                currentPitchBg = ((ImageIcon) dsPitch.getIcon()).getImage();
+            }
+
             refreshOpponentPitch(cDObj, activeTeam);
 
             components.v matchComp = (components.v) getFieldValue(cDObj, "Db");
@@ -308,12 +368,14 @@ public class InMatchHudManager {
 
             JLabel scoreHome = (JLabel) getFieldValue(cDObj, "Dw");
             JLabel scoreAway = (JLabel) getFieldValue(cDObj, "Dx");
-            JLabel matchTime = (JLabel) getFieldValue(cDObj, "zO");
-            JLabel matchPeriod = (JLabel) getFieldValue(cDObj, "zP");
-            JLabel stadiumLbl = (JLabel) getFieldValue(cDObj, "Dv");
-            JLabel attLbl = (JLabel) getFieldValue(cDObj, "DE");
+            JLabel matchTime = (JLabel) getFieldValue(cDObj, "Dv");
+            JLabel matchPeriod = (JLabel) getFieldValue(cDObj, "DE");
+            JLabel stadiumLbl = (JLabel) getFieldValue(cDObj, "Cg");
+            JLabel attLbl = (JLabel) getFieldValue(cDObj, "Dy");
+            JLabel formOppLbl = (JLabel) getFieldValue(cDObj, "DC");
 
             updateScoreboardValues(match, scoreHome, scoreAway, matchTime, matchPeriod, stadiumLbl, attLbl);
+            updateOpponentInfo(match, formOppLbl);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -323,7 +385,7 @@ public class InMatchHudManager {
     /**
      * Alterna suavemente entre Mandante e Visitante chamando o método a/cD.a(this, teamId).
      */
-    private static void switchActiveTeam(Object cDObj) {
+    public static void switchActiveTeam(Object cDObj) {
         try {
             int cur = getIntField(cDObj, "Di", 1);
             int next = (cur == 1) ? 2 : 1;
@@ -339,7 +401,7 @@ public class InMatchHudManager {
     /**
      * Renderiza o campo do adversário usando o gerador gráfico oficial de components.ao.
      */
-    private static void refreshOpponentPitch(Object cDObj, int activeTeam) {
+    public static void refreshOpponentPitch(Object cDObj, int activeTeam) {
         try {
             components.v matchComp = (components.v) getFieldValue(cDObj, "Db");
             if (matchComp == null) return;
@@ -355,13 +417,20 @@ public class InMatchHudManager {
                     : (ImageIcon) getFieldValue(cDObj, "AL");
             best.ah tactics = (oppIndex == 2) ? match.hd() : match.hc();
 
-            if (list != null && !list.isEmpty() && oppPitchLabel != null && oppBenchLabel != null) {
+            if (list != null && !list.isEmpty()) {
                 components.ao firstAo = (components.ao) list.get(0);
                 if (firstAo != null) {
                     ImageIcon pitchIcon = firstAo.a(list, -1, jersey, false, oppIndex, tactics, 2);
                     ImageIcon benchIcon = firstAo.a(list, -1, jersey, false, oppIndex, tactics, 3);
-                    oppPitchLabel.setIcon(pitchIcon);
-                    oppBenchLabel.setIcon(benchIcon);
+                    if (pitchIcon != null) {
+                        currentOppPlayersImg = pitchIcon.getImage();
+                    }
+                    if (oppBenchLabel != null) {
+                        oppBenchLabel.setIcon(benchIcon);
+                    }
+                    if (oppPitchComp != null) {
+                        oppPitchComp.repaint();
+                    }
                 }
             }
         } catch (Exception e) {
@@ -397,73 +466,60 @@ public class InMatchHudManager {
         ImageIcon crestA = (match != null && match.hd() != null) ? match.hd().x(36, 36) : null;
 
         JLabel lblCrestH = new JLabel(crestH);
-        lblCrestH.setBounds(20, 20, 40, 40);
+        lblCrestH.setBounds(40, 14, 36, 36);
         card.add(lblCrestH);
 
         JLabel lblCrestA = new JLabel(crestA);
-        lblCrestA.setBounds(380, 20, 40, 40);
+        lblCrestA.setBounds(364, 14, 36, 36);
         card.add(lblCrestA);
 
-        // Placares (Dw e Dx)
+        // Placares (Dw e Dx) perfeitamente centralizados
         if (sHome != null) {
-            sHome.setFont(new Font("Segoe UI", Font.BOLD, 28));
+            sHome.setFont(new Font("Segoe UI", Font.BOLD, 30));
             sHome.setForeground(TEXT_WHITE);
-            sHome.setHorizontalAlignment(SwingConstants.CENTER);
-            sHome.setBounds(70, 18, 55, 42);
+            sHome.setHorizontalAlignment(SwingConstants.RIGHT);
+            sHome.setBounds(95, 10, 65, 42);
             card.add(sHome);
         }
 
-        JLabel lblX = new JLabel("X");
-        lblX.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        JLabel lblX = new JLabel("x");
+        lblX.setFont(new Font("Segoe UI", Font.BOLD, 18));
         lblX.setForeground(TEXT_MUTED);
         lblX.setHorizontalAlignment(SwingConstants.CENTER);
-        lblX.setBounds(130, 26, 20, 30);
+        lblX.setBounds(205, 16, 30, 30);
         card.add(lblX);
 
         if (sAway != null) {
-            sAway.setFont(new Font("Segoe UI", Font.BOLD, 28));
+            sAway.setFont(new Font("Segoe UI", Font.BOLD, 30));
             sAway.setForeground(TEXT_WHITE);
-            sAway.setHorizontalAlignment(SwingConstants.CENTER);
-            sAway.setBounds(155, 18, 55, 42);
+            sAway.setHorizontalAlignment(SwingConstants.LEFT);
+            sAway.setBounds(280, 10, 65, 42);
             card.add(sAway);
         }
 
-        // Pill Central de Tempo Decorrido (38' 2ºT)
-        JPanel timePill = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 3)) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2 = (Graphics2D) g.create();
-                EaFcUiHelper.applyHighQualityRendering(g2);
-                g2.setColor(new Color(16, 185, 129, 220));
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 6, 6);
-                g2.dispose();
-            }
-        };
-        timePill.setOpaque(false);
-        timePill.setBounds(230, 24, 135, 30);
+        // Tempo Decorrido & Período (46' • 1º)
+        String tText = (mTime != null && mTime.getText() != null) ? mTime.getText() : "0'";
+        String pText = (mPeriod != null && mPeriod.getText() != null) ? mPeriod.getText() : "1º";
+        lblScoreTimePeriod = new JLabel(tText + "  •  " + pText);
+        lblScoreTimePeriod.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        lblScoreTimePeriod.setForeground(EMERALD);
+        lblScoreTimePeriod.setHorizontalAlignment(SwingConstants.CENTER);
+        lblScoreTimePeriod.setBounds(120, 52, 200, 18);
+        card.add(lblScoreTimePeriod);
 
-        if (mTime != null) {
-            mTime.setFont(new Font("Verdana", Font.BOLD, 14));
-            mTime.setForeground(Color.WHITE);
-            timePill.add(mTime);
-        }
-        if (mPeriod != null) {
-            mPeriod.setFont(new Font("Verdana", Font.BOLD, 12));
-            mPeriod.setForeground(Color.WHITE);
-            timePill.add(mPeriod);
-        }
-        card.add(timePill);
-
-        // Estádio e Público / Renda (Rodapé do Card)
+        // Estádio e Público / Torcedores Integrados na Base
         String stadText = (stadium != null && stadium.getText() != null) ? stadium.getText() : "Estádio";
         String attText = (att != null && att.getText() != null) ? att.getText() : "";
-        JLabel lblMatchInfo = new JLabel(stadText + "  •  " + attText);
-        lblMatchInfo.setFont(new Font("Verdana", Font.PLAIN, 10));
-        lblMatchInfo.setForeground(TEXT_MUTED);
-        lblMatchInfo.setHorizontalAlignment(SwingConstants.CENTER);
-        lblMatchInfo.setBounds(10, 68, 420, 20);
-        card.add(lblMatchInfo);
+        String fullInfo = stadText;
+        if (!attText.isEmpty()) {
+            fullInfo += "   •   " + attText + " torcedores";
+        }
+        lblScoreStadiumAtt = new JLabel(fullInfo);
+        lblScoreStadiumAtt.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        lblScoreStadiumAtt.setForeground(TEXT_MUTED);
+        lblScoreStadiumAtt.setHorizontalAlignment(SwingConstants.CENTER);
+        lblScoreStadiumAtt.setBounds(10, 72, 420, 18);
+        card.add(lblScoreStadiumAtt);
 
         return card;
     }
@@ -474,12 +530,27 @@ public class InMatchHudManager {
             JLabel stadium, JLabel att
     ) {
         if (scoreboardCard == null) return;
+        try {
+            if (lblScoreTimePeriod != null) {
+                String tText = (mTime != null && mTime.getText() != null) ? mTime.getText() : "0'";
+                String pText = (mPeriod != null && mPeriod.getText() != null) ? mPeriod.getText() : "1º";
+                lblScoreTimePeriod.setText(tText + "  •  " + pText);
+            }
+            if (lblScoreStadiumAtt != null) {
+                String stadText = (stadium != null && stadium.getText() != null) ? stadium.getText() : "Estádio";
+                String attText = (att != null && att.getText() != null) ? att.getText() : "";
+                String fullInfo = stadText;
+                if (!attText.isEmpty()) {
+                    fullInfo += "   •   " + attText + " torcedores";
+                }
+                lblScoreStadiumAtt.setText(fullInfo);
+            }
+        } catch (Exception ignored) {}
         scoreboardCard.repaint();
     }
 
     /**
-     * Estiliza o JTable e o JScrollPane de eventos para o visual moderno EA FC Dark
-     * preservando os icones originais de bola, cartao, lesao e substituicao.
+     * Estiliza o JTable e o JScrollPane de eventos para o visual moderno EA FC Dark.
      */
     private static void styleEventsTable(JScrollPane sp, JTable table) {
         if (sp == null || table == null) return;
@@ -499,25 +570,23 @@ public class InMatchHudManager {
         final TableCellRenderer orig = table.getDefaultRenderer(best.A.class);
         table.setDefaultRenderer(best.A.class, new TableCellRenderer() {
             @Override
-            public Component getTableCellRendererComponent(
-                    JTable t, Object val, boolean isSel, boolean hasFoc, int row, int col
-            ) {
+            public Component getTableCellRendererComponent(JTable t, Object val, boolean isSel, boolean hasFoc, int row, int col) {
                 Component c = (orig != null) 
-                        ? orig.getTableCellRendererComponent(t, val, isSel, hasFoc, row, col)
-                        : new JLabel();
-                if (c instanceof JComponent) {
-                    ((JComponent) c).setOpaque(true);
-                }
-                c.setBackground(row % 2 == 0 ? PANEL_DARK : CARD_BG);
+                        ? orig.getTableCellRendererComponent(t, val, isSel, hasFoc, row, col) 
+                        : new DefaultTableCellRenderer().getTableCellRendererComponent(t, val, isSel, hasFoc, row, col);
+
+                c.setBackground((row % 2 == 0) ? PANEL_DARK : new Color(22, 30, 48));
                 c.setForeground(TEXT_WHITE);
-                c.setFont(new Font("Verdana", Font.PLAIN, 11));
+                if (c instanceof JComponent) {
+                    ((JComponent) c).setBorder(BorderFactory.createEmptyBorder(0, 6, 0, 6));
+                }
                 return c;
             }
         });
     }
 
     /**
-     * Atualiza o radar hexagonal tático comparativo com as médias ao vivo dos dois times.
+     * Atualiza os atributos de ambos os times no Radar Tático Hexagonal Sobreposto.
      */
     private static void updateRadarStats(Object cDObj, best.I match) {
         if (radarPanel == null || match == null) return;
@@ -525,26 +594,26 @@ public class InMatchHudManager {
             ArrayList<?> listH = (ArrayList<?>) getFieldValue(cDObj, "AE");
             ArrayList<?> listA = (ArrayList<?>) getFieldValue(cDObj, "Dc");
 
-            List<best.F> homeStarters = extractStarters(listH);
-            List<Integer> homeSlots = extractSlots(listH);
+            List<best.F> startersH = extractStarters(listH);
+            List<best.F> startersA = extractStarters(listA);
 
-            List<best.F> awayStarters = extractStarters(listA);
-            List<Integer> awaySlots = extractSlots(listA);
+            List<Integer> slotsH = extractSlots(listH);
+            List<Integer> slotsA = extractSlots(listA);
 
-            int homeOvr = EaFcUiHelper.calculateOverall(homeStarters, homeSlots);
-            int[] homeAttrs = EaFcUiHelper.calculateTeamAttributes(homeStarters, homeSlots);
+            int homeOvr = (startersH.isEmpty()) ? 75 : EaFcUiHelper.calculateOverall(startersH, slotsH);
+            int awayOvr = (startersA.isEmpty()) ? 75 : EaFcUiHelper.calculateOverall(startersA, slotsA);
 
-            int awayOvr = EaFcUiHelper.calculateOverall(awayStarters, awaySlots);
-            int[] awayAttrs = EaFcUiHelper.calculateTeamAttributes(awayStarters, awaySlots);
+            int[] homeAttrs = (startersH.isEmpty()) ? new int[]{75,75,75,75,75,75} : EaFcUiHelper.calculateTeamAttributes(startersH, slotsH);
+            int[] awayAttrs = (startersA.isEmpty()) ? new int[]{75,75,75,75,75,75} : EaFcUiHelper.calculateTeamAttributes(startersA, slotsA);
 
-            String nameH = (match.hc() != null) ? match.hc().getNome() : "CASA";
-            String nameA = (match.hd() != null) ? match.hd().getNome() : "FORA";
+            String nameH = (match.hc() != null) ? match.hc().getNome() : "MANDANTE";
+            String nameA = (match.hd() != null) ? match.hd().getNome() : "VISITANTE";
             ImageIcon crestH = (match.hc() != null) ? match.hc().x(24, 24) : null;
             ImageIcon crestA = (match.hd() != null) ? match.hd().x(24, 24) : null;
 
-            radarPanel.updateAllStats(
+            radarPanel.updateStats(
                     nameH, crestH, homeOvr, homeAttrs,
-                    true, nameA, crestA, awayOvr, awayAttrs
+                    nameA, crestA, awayOvr, awayAttrs
             );
 
         } catch (Exception e) {
@@ -578,7 +647,7 @@ public class InMatchHudManager {
         return slots;
     }
 
-    private static JPanel buildOpponentInfoCard(best.I match) {
+    private static JPanel buildOpponentInfoCard(best.I match, JLabel formLbl) {
         JPanel card = new JPanel(null) {
             @Override
             protected void paintComponent(Graphics g) {
@@ -601,25 +670,44 @@ public class InMatchHudManager {
             }
         } catch (Exception ignored) {}
 
-        JLabel lblTitle = new JLabel("PLANO DE JOGO DO ADVERSÁRIO (IA)");
+        String formation = (formLbl != null && formLbl.getText() != null) ? formLbl.getText() : "4-4-2";
+
+        JLabel lblTitle = new JLabel("COMANDO TÉCNICO & ESTRATÉGIA DO ADVERSÁRIO");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 11));
         lblTitle.setForeground(TEXT_MUTED);
-        lblTitle.setBounds(15, 8, 300, 20);
+        lblTitle.setBounds(15, 10, 400, 20);
         card.add(lblTitle);
 
-        JLabel lblCoach = new JLabel("Técnico: " + coach);
-        lblCoach.setFont(new Font("Verdana", Font.BOLD, 11));
-        lblCoach.setForeground(TEXT_WHITE);
-        lblCoach.setBounds(15, 30, 250, 20);
-        card.add(lblCoach);
+        lblOppCoach = new JLabel("Técnico: " + coach);
+        lblOppCoach.setFont(new Font("Verdana", Font.BOLD, 12));
+        lblOppCoach.setForeground(TEXT_WHITE);
+        lblOppCoach.setBounds(15, 34, 300, 20);
+        card.add(lblOppCoach);
 
-        JLabel lblHint = new JLabel("💡 Clique no campo adversário para alternar foco ou inspecionar");
-        lblHint.setFont(new Font("Verdana", Font.PLAIN, 10));
-        lblHint.setForeground(new Color(148, 163, 184));
-        lblHint.setBounds(15, 52, 450, 18);
-        card.add(lblHint);
+        lblOppFormation = new JLabel("Esquema Tático: " + formation);
+        lblOppFormation.setFont(new Font("Verdana", Font.PLAIN, 11));
+        lblOppFormation.setForeground(GOLD_ACCENT);
+        lblOppFormation.setBounds(330, 34, 250, 20);
+        card.add(lblOppFormation);
 
         return card;
+    }
+
+    private static void updateOpponentInfo(best.I match, JLabel formLbl) {
+        if (oppInfoCard == null) return;
+        try {
+            String coach = "Adversário";
+            if (match != null && match.hd() != null && match.hd().ka() != null) {
+                coach = match.hd().ka().dS();
+            }
+            if (lblOppCoach != null) {
+                lblOppCoach.setText("Técnico: " + coach);
+            }
+            if (lblOppFormation != null && formLbl != null && formLbl.getText() != null) {
+                lblOppFormation.setText("Esquema Tático: " + formLbl.getText());
+            }
+        } catch (Exception ignored) {}
+        oppInfoCard.repaint();
     }
 
     private static void styleLabel(JLabel lbl, String text) {
@@ -650,13 +738,13 @@ public class InMatchHudManager {
         }
     }
 
-    private static int getIntField(Object target, String fieldName, int def) {
+    private static int getIntField(Object target, String fieldName, int fallback) {
         try {
             Field f = target.getClass().getDeclaredField(fieldName);
             f.setAccessible(true);
             return f.getInt(target);
         } catch (Exception e) {
-            return def;
+            return fallback;
         }
     }
 }

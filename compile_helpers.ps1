@@ -19,6 +19,7 @@ Write-Host "Compiling mod helper classes using $javac..."
     "$PSScriptRoot\UndoHelper.java" `
     "$PSScriptRoot\PositionPenaltyHelper.java" `
     "$PSScriptRoot\InMatchStatsPanel.java" `
+    "$PSScriptRoot\InMatchDualRadarPanel.java" `
     "$PSScriptRoot\InMatchHudManager.java"
 
 if ($LASTEXITCODE -eq 0) {

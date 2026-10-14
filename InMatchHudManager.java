@@ -81,6 +81,18 @@ public class InMatchHudManager {
             root.setLayout(null);
             root.setPreferredSize(new Dimension(WIN_WIDTH, WIN_HEIGHT));
 
+            // Reseta referências cacheadas da sessão anterior para evitar reutilizar componentes de diálogo destruído
+            userTacticsCard = null;
+            oppInfoCard = null;
+            scoreboardCard = null;
+            statsPanel = null;
+            radarPanel = null;
+            oppPreviewPanel = null;
+            oppPitchComp = null;
+            oppBenchLabel = null;
+            lblHomeHeader = null;
+            lblAwayHeader = null;
+
             // Componentes nativos de cD
             components.v matchComp = (components.v) getFieldValue(cDObj, "Db");
             best.I match = (matchComp != null) ? matchComp.tR() : null;
@@ -115,6 +127,13 @@ public class InMatchHudManager {
             JTable tableEvents = (JTable) getFieldValue(cDObj, "DG");
 
             int activeTeam = getIntField(cDObj, "Di", 1); // 1 = Casa, 2 = Fora
+
+            // Sincroniza imediatamente o texto de subsLbl com as substituições REAIS do motor
+            if (subsLbl != null && match != null) {
+                int teamIdx = activeTeam - 1;
+                int remaining = match.aR(teamIdx);
+                subsLbl.setText("Substituições restantes: " + remaining);
+            }
 
             // Esconde componentes nativos antigos de fundo ou redundantes
             hideComponent((Component) getFieldValue(cDObj, "vd"));
@@ -362,6 +381,14 @@ public class InMatchHudManager {
             }
             if (radarPanel != null && match != null) {
                 updateRadarStats(cDObj, match);
+            }
+
+            JLabel subsLbl = (JLabel) getFieldValue(cDObj, "DA");
+            if (subsLbl != null && match != null) {
+                int teamIdx = activeTeam - 1;
+                int remaining = match.aR(teamIdx);
+                subsLbl.setText("Substituições restantes: " + remaining);
+                subsLbl.repaint();
             }
 
             JLabel scoreHome = (JLabel) getFieldValue(cDObj, "Dw");

@@ -425,7 +425,11 @@ public class FullEaFcInjector {
             File compDir = new File("C:/Brasfoot22-23/projeto/build_mod/components");
             compDir.mkdirs();
 
-            InputStream is = zip.getInputStream(zip.getEntry("components/ao.class"));
+            File patchedAoFile = new File("C:/Brasfoot22-23/projeto/build_mod/components/ao.class");
+            if (!patchedAoFile.exists()) {
+                patchedAoFile = new File("C:/Users/Leandro/.gemini/antigravity-ide/scratch/base_patches/components/ao.class");
+            }
+            InputStream is = patchedAoFile.exists() ? new FileInputStream(patchedAoFile) : zip.getInputStream(zip.getEntry("components/ao.class"));
             ClassReader cr = new ClassReader(is);
             ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 

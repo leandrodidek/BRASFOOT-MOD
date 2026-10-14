@@ -1,5 +1,8 @@
-$javac = (Get-ChildItem -Path "C:\Program Files\Microsoft", "C:\Program Files\Java" -Filter "javac.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName)
-if (-not $javac) { $javac = (Get-Command javac -ErrorAction SilentlyContinue).Source }
+$javac = @(
+    "C:\Users\Leandro\.antigravity-ide\extensions\redhat.java-1.56.0-win32-x64\jre\21.0.12.1-win32-x86_64\bin\javac.exe",
+    (Get-ChildItem -Path "C:\Program Files\Microsoft", "C:\Program Files\Java", "C:\Users\Leandro\.antigravity-ide" -Filter "javac.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName),
+    (Get-Command javac -ErrorAction SilentlyContinue).Source
+) | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
 
 # 1. Ensure extracted base jar exists
 $extractedJar = "C:\Brasfoot22-23\bf22-23_extracted.jar"

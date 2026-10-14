@@ -162,9 +162,10 @@ public class InMatchHudManager {
             // =========================================================
             // 3. BANCO E CAMPO DO USUÁRIO
             // =========================================================
-            // Remove a textura verde escura de madeira do banco do usuário
+            // Remove a textura verde escura de madeira do banco do usuário e limpa texto residual
             if (dqBench != null) {
                 dqBench.setIcon(null);
+                dqBench.setText("");
                 dqBench.setOpaque(true);
                 dqBench.setBackground(BG_DEEP);
             }
@@ -178,6 +179,7 @@ public class InMatchHudManager {
 
                 // Banco de reservas do adversário (fundo puro da interface)
                 oppBenchLabel = new JLabel();
+                oppBenchLabel.setText("");
                 oppBenchLabel.setBounds(0, 0, 210, 650);
                 oppBenchLabel.setOpaque(true);
                 oppBenchLabel.setBackground(BG_DEEP);
@@ -338,8 +340,12 @@ public class InMatchHudManager {
             JLabel dqBench = (JLabel) getFieldValue(cDObj, "Dq");
             if (dqBench != null) {
                 dqBench.setIcon(null);
+                dqBench.setText("");
                 dqBench.setOpaque(true);
                 dqBench.setBackground(BG_DEEP);
+            }
+            if (oppBenchLabel != null) {
+                oppBenchLabel.setText("");
             }
 
             if (dsPitch != null && dsPitch.getIcon() instanceof ImageIcon) {
@@ -625,22 +631,152 @@ public class InMatchHudManager {
         table.setShowGrid(false);
         table.setTableHeader(null);
 
-        final TableCellRenderer orig = table.getDefaultRenderer(best.A.class);
+        table.setRowHeight(26);
+
         table.setDefaultRenderer(best.A.class, new TableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable t, Object val, boolean isSel, boolean hasFoc, int row, int col) {
-                Component c = (orig != null) 
-                        ? orig.getTableCellRendererComponent(t, val, isSel, hasFoc, row, col) 
-                        : new DefaultTableCellRenderer().getTableCellRendererComponent(t, val, isSel, hasFoc, row, col);
+                JPanel cell = new JPanel(new BorderLayout());
+                cell.setOpaque(true);
+                cell.setBackground((row % 2 == 0) ? PANEL_DARK : new Color(22, 30, 48));
 
-                c.setBackground((row % 2 == 0) ? PANEL_DARK : new Color(22, 30, 48));
-                c.setForeground(TEXT_WHITE);
-                if (c instanceof JComponent) {
-                    ((JComponent) c).setBorder(BorderFactory.createEmptyBorder(0, 6, 0, 6));
+                if (!(val instanceof best.A)) {
+                    return cell;
                 }
-                return c;
+
+                best.A ev = (best.A) val;
+                if (!ev.isDone()) {
+                    return cell;
+                }
+
+                int type = ev.b();
+
+                // 1. Linhas de Seção/Cabeçalho da tabela de eventos (type > 90)
+                if (type > 90) {
+                    cell.setBackground(new Color(24, 33, 52));
+                    if (col == 1) {
+                        String title;
+                        if (type == 91) title = "⚽  GOLS DA PARTIDA";
+                        else if (type == 92) title = "🟨  CARTÕES & ADVERTÊNCIAS";
+                        else if (type == 95) title = "🩹  CONTUSÕES";
+                        else if (type == 96) title = "🔄  SUBSTITUIÇÕES";
+                        else title = "ACONTECIMENTOS";
+
+                        JLabel lbl = new JLabel(title, SwingConstants.CENTER);
+                        lbl.setFont(new Font("Segoe UI", Font.BOLD, 10));
+                        lbl.setForeground(GOLD_ACCENT);
+                        cell.add(lbl, BorderLayout.CENTER);
+                    }
+                    return cell;
+                }
+
+                // 2. Linhas de Eventos (type <= 90)
+                int teamSide = ev.et(); // 0 = Mandante (esquerda), 1 = Visitante (direita)
+
+                // Renderiza o badge/ícone moderno no lado correto
+                if ((col == 0 && teamSide == 0) || (col == 2 && teamSide == 1)) {
+                    cell.add(createModernEventBadge(ev, type), BorderLayout.CENTER);
+                } else if (col == 1) {
+                    // Coluna central: Texto do evento (limpo, moderno, com alinhamento correto)
+                    JLabel lbl = new JLabel(ev.er());
+                    lbl.setFont(new Font("Segoe UI", Font.BOLD, 11));
+                    lbl.setForeground(TEXT_WHITE);
+                    lbl.setHorizontalAlignment(teamSide == 0 ? SwingConstants.LEFT : SwingConstants.RIGHT);
+                    lbl.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 4));
+                    cell.add(lbl, BorderLayout.CENTER);
+                }
+
+                return cell;
             }
         });
+    }
+
+    private static JComponent createModernEventBadge(final best.A ev, final int type) {
+        return new JComponent() {
+            {
+                setPreferredSize(new Dimension(24, 22));
+                setOpaque(false);
+            }
+            @Override
+            protected void paintComponent(Graphics g1) {
+                super.paintComponent(g1);
+                Graphics2D g = (Graphics2D) g1.create();
+                EaFcUiHelper.applyHighQualityRendering(g);
+
+                int w = getWidth();
+                int h = getHeight();
+
+                if (type == 1) { // GOL
+                    boolean isOwnGoal = (ev.el() == 2);
+                    if (isOwnGoal) {
+                        g.setColor(new Color(220, 38, 38));
+                        g.fillRoundRect(1, 4, w - 2, h - 8, 4, 4);
+                        g.setColor(Color.WHITE);
+                        g.setFont(new Font("Verdana", Font.BOLD, 8));
+                        FontMetrics fm = g.getFontMetrics();
+                        int tw = fm.stringWidth("GC");
+                        g.drawString("GC", (w - tw) / 2, (h - fm.getHeight()) / 2 + fm.getAscent());
+                    } else {
+                        g.setColor(new Color(16, 185, 129));
+                        g.fillRoundRect(1, 4, w - 2, h - 8, 4, 4);
+                        g.setColor(Color.WHITE);
+                        g.setFont(new Font("Verdana", Font.BOLD, 8));
+                        FontMetrics fm = g.getFontMetrics();
+                        int tw = fm.stringWidth("GOL");
+                        g.drawString("GOL", (w - tw) / 2, (h - fm.getHeight()) / 2 + fm.getAscent());
+                    }
+                } else if (type == 7) { // Gol contra direto
+                    g.setColor(new Color(220, 38, 38));
+                    g.fillRoundRect(1, 4, w - 2, h - 8, 4, 4);
+                    g.setColor(Color.WHITE);
+                    g.setFont(new Font("Verdana", Font.BOLD, 8));
+                    FontMetrics fm = g.getFontMetrics();
+                    int tw = fm.stringWidth("GC");
+                    g.drawString("GC", (w - tw) / 2, (h - fm.getHeight()) / 2 + fm.getAscent());
+                } else if (type == 2) { // Cartão Amarelo
+                    int cw = 11, ch = 15;
+                    int cx = (w - cw) / 2, cy = (h - ch) / 2;
+                    g.setColor(new Color(234, 179, 8));
+                    g.fillRoundRect(cx, cy, cw, ch, 3, 3);
+                    g.setColor(new Color(202, 138, 4));
+                    g.drawRoundRect(cx, cy, cw, ch, 3, 3);
+                } else if (type == 3) { // 2º Amarelo -> Vermelho
+                    int cw = 10, ch = 14;
+                    g.setColor(new Color(234, 179, 8));
+                    g.fillRoundRect(w / 2 - 7, h / 2 - 6, cw, ch, 2, 2);
+                    g.setColor(new Color(239, 68, 68));
+                    g.fillRoundRect(w / 2 - 2, h / 2 - 4, cw, ch, 2, 2);
+                } else if (type == 4) { // Cartão Vermelho Direto
+                    int cw = 11, ch = 15;
+                    int cx = (w - cw) / 2, cy = (h - ch) / 2;
+                    g.setColor(new Color(239, 68, 68));
+                    g.fillRoundRect(cx, cy, cw, ch, 3, 3);
+                    g.setColor(new Color(185, 28, 28));
+                    g.drawRoundRect(cx, cy, cw, ch, 3, 3);
+                } else if (type == 5) { // Contusão (Cruz vermelha)
+                    int sz = 15;
+                    int cx = (w - sz) / 2, cy = (h - sz) / 2;
+                    g.setColor(new Color(239, 68, 68, 45));
+                    g.fillRoundRect(cx, cy, sz, sz, 4, 4);
+                    g.setColor(new Color(239, 68, 68));
+                    g.drawRoundRect(cx, cy, sz, sz, 4, 4);
+                    g.fillRect(w / 2 - 1, cy + 3, 2, 9);
+                    g.fillRect(cx + 3, h / 2 - 1, 9, 2);
+                } else if (type == 6) { // Substituição
+                    g.setColor(new Color(30, 41, 59));
+                    g.fillRoundRect(1, 4, w - 2, h - 8, 4, 4);
+                    g.setColor(new Color(56, 189, 248));
+                    g.drawRoundRect(1, 4, w - 2, h - 8, 4, 4);
+                    g.setColor(new Color(56, 189, 248));
+                    g.setFont(new Font("Verdana", Font.BOLD, 8));
+                    FontMetrics fm = g.getFontMetrics();
+                    int tw = fm.stringWidth("SUB");
+                    g.drawString("SUB", (w - tw) / 2, (h - fm.getHeight()) / 2 + fm.getAscent());
+                }
+
+                g.dispose();
+            }
+        };
     }
 
     /**
@@ -770,7 +906,7 @@ public class InMatchHudManager {
         if (lblAtaque != null) { lblAtaque.setBounds(415, 66, 190, 16); card.add(lblAtaque); }
         if (cbAtaque != null) { cbAtaque.setBounds(415, 86, 190, 32); card.add(cbAtaque); }
 
-        JLabel lblTip = new JLabel("⚡ As alterações táticas entram em vigor imediatamente após o reinício da partida.");
+        JLabel lblTip = new JLabel("As alterações táticas entram em vigor imediatamente após o reinício da partida.");
         lblTip.setFont(new Font("Verdana", Font.PLAIN, 10));
         lblTip.setForeground(TEXT_MUTED);
         lblTip.setBounds(15, 134, 580, 18);
@@ -841,29 +977,23 @@ public class InMatchHudManager {
         lblTitle.setBounds(15, 12, 350, 20);
         card.add(lblTitle);
 
-        // Badge CPU
-        JLabel lblCpuBadge = new JLabel("CPU / ADVERSÁRIO");
-        lblCpuBadge.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        lblCpuBadge.setForeground(GOLD_ACCENT);
-        lblCpuBadge.setHorizontalAlignment(SwingConstants.CENTER);
-        lblCpuBadge.setBounds(460, 10, 145, 24);
-        lblCpuBadge.setBorder(BorderFactory.createCompoundBorder(
+        // Esquema Tático posicionado no topo direito dentro do card (substituindo o antigo badge CPU)
+        lblOppFormation = new JLabel("ESQUEMA: " + formation);
+        lblOppFormation.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        lblOppFormation.setForeground(GOLD_ACCENT);
+        lblOppFormation.setHorizontalAlignment(SwingConstants.CENTER);
+        lblOppFormation.setBounds(440, 10, 165, 24);
+        lblOppFormation.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(GOLD_ACCENT, 1, true),
             BorderFactory.createEmptyBorder(2, 6, 2, 6)
         ));
-        card.add(lblCpuBadge);
+        card.add(lblOppFormation);
 
         lblOppCoach = new JLabel("Técnico: " + coach);
         lblOppCoach.setFont(new Font("Verdana", Font.BOLD, 12));
         lblOppCoach.setForeground(TEXT_WHITE);
-        lblOppCoach.setBounds(15, 38, 250, 20);
+        lblOppCoach.setBounds(15, 38, 400, 20);
         card.add(lblOppCoach);
-
-        lblOppFormation = new JLabel("Esquema Tático: " + formation);
-        lblOppFormation.setFont(new Font("Verdana", Font.BOLD, 12));
-        lblOppFormation.setForeground(GOLD_ACCENT);
-        lblOppFormation.setBounds(280, 38, 250, 20);
-        card.add(lblOppFormation);
 
         // 3 caixas de status tático
         JPanel box1 = createOppStatBox("POSTURA DEFENSIVA", "Linhas Compactas");
@@ -877,12 +1007,6 @@ public class InMatchHudManager {
         JPanel box3 = createOppStatBox("SUBSTITUIÇÕES", "0 de 5 realizadas");
         box3.setBounds(415, 66, 190, 56);
         card.add(box3);
-
-        JLabel lblOppTip = new JLabel("📊 Inteligência tática calculada ao vivo conforme o andamento da partida.");
-        lblOppTip.setFont(new Font("Verdana", Font.PLAIN, 10));
-        lblOppTip.setForeground(TEXT_MUTED);
-        lblOppTip.setBounds(15, 134, 580, 18);
-        card.add(lblOppTip);
 
         return card;
     }
@@ -898,7 +1022,7 @@ public class InMatchHudManager {
                 lblOppCoach.setText("Técnico: " + coach);
             }
             if (lblOppFormation != null && formLbl != null && formLbl.getText() != null) {
-                lblOppFormation.setText("Esquema Tático: " + formLbl.getText());
+                lblOppFormation.setText("ESQUEMA: " + formLbl.getText());
             }
         } catch (Exception ignored) {}
         oppInfoCard.repaint();

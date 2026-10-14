@@ -42,6 +42,27 @@ public class SubstitutionManager {
             System.out.println("[SubstitutionManager] Session started. Initial starters recorded -> Mandante: " 
                 + initialStartersMandante.size() + ", Visitante: " + initialStartersVisitante.size());
 
+            // Atualiza imediatamente o contador DA com as substituições reais restantes
+            try {
+                Field diField = clazz.getDeclaredField("Di");
+                diField.setAccessible(true);
+                int di = diField.getInt(cDInstance);
+                int teamIndex = di - 1;
+
+                Field dbField = clazz.getDeclaredField("Db");
+                dbField.setAccessible(true);
+                components.v vObj = (components.v) dbField.get(cDInstance);
+                best.I matchEngine = vObj.tR();
+
+                Field daField = clazz.getDeclaredField("DA");
+                daField.setAccessible(true);
+                JLabel lblDA = (JLabel) daField.get(cDInstance);
+                if (lblDA != null && matchEngine != null) {
+                    int remaining = matchEngine.aR(teamIndex);
+                    lblDA.setText("Substituições restantes: " + remaining);
+                }
+            } catch (Exception ignored) {}
+
             // Garante que o HUD widescreen atualize com ambos os times já carregados na abertura
             try {
                 InMatchHudManager.onTeamRefreshed(cDInstance);
@@ -103,6 +124,9 @@ public class SubstitutionManager {
             ArrayList<?> list = (ArrayList<?>) listField.get(cDInstance);
 
             Map<Integer, best.F> initialStarters = (teamIndex == 1) ? initialStartersVisitante : initialStartersMandante;
+            if (initialStarters.isEmpty()) {
+                recordStarters(list, initialStarters);
+            }
 
             // Pega o icone da camisa (AL para time 0, Dd para time 1)
             Field iconField = (teamIndex == 1) ? clazz.getDeclaredField("Dd") : clazz.getDeclaredField("AL");
@@ -193,10 +217,8 @@ public class SubstitutionManager {
                 if (ao != null) {
                     if (s == fSlot) {
                         simulatedStarters.add(simField);
-                    } else {
-                        if (ao.x() != null) {
-                            simulatedStarters.add(ao.x());
-                        }
+                    } else if (ao.x() != null) {
+                        simulatedStarters.add(ao.x());
                     }
                 }
             }
@@ -204,7 +226,14 @@ public class SubstitutionManager {
 
         int changed = 0;
         for (best.F originalPlayer : initialStarters.values()) {
-            if (!simulatedStarters.contains(originalPlayer)) {
+            boolean found = false;
+            for (best.F sim : simulatedStarters) {
+                if (sim == originalPlayer || (sim != null && originalPlayer != null && sim.equals(originalPlayer))) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
                 changed++;
             }
         }
@@ -295,27 +324,22 @@ public class SubstitutionManager {
             }
         }
 
-        // SEGURANÇA TOTAL: Filtra para garantir que pIn e pOut pertençam ESTRITAMENTE a este clube!
-        // Um jogador que entra deve ter estado no banco deste time (list nos slots >= 26)
-        // ou nos reservas oficiais do matchEngine (hn para 0, ho para 1)!
-        ArrayList<?> teamBench = (teamIndex == 0) ? matchEngine.hn() : matchEngine.ho();
+        // Validação: garante que pIn pertença ao clube ativo
+        best.ah activeTeam = (teamIndex == 0) ? matchEngine.hc() : matchEngine.hd();
         Iterator<best.F> inIt = playersIn.iterator();
         while (inIt.hasNext()) {
             best.F pIn = inIt.next();
             boolean validIn = false;
-            if (teamBench != null && teamBench.contains(pIn)) {
-                validIn = true;
-            } else {
-                for (int b = 26; b < list.size(); b++) {
-                    components.ao aoB = (components.ao) list.get(b);
-                    if (aoB != null && pIn.equals(aoB.x())) {
-                        validIn = true;
-                        break;
-                    }
+            if (pIn != null) {
+                best.ah pTeam = pIn.fg();
+                if (pTeam == null || pTeam == activeTeam || (activeTeam != null && pTeam.equals(activeTeam))) {
+                    validIn = true;
+                } else if (activeTeam != null && activeTeam.kc() != null && activeTeam.kc().contains(pIn)) {
+                    validIn = true;
                 }
             }
             if (!validIn) {
-                System.out.println("[SubstitutionManager] REJEITADO jogador que nao pertence ao elenco do time " + teamIndex + ": " + pIn.getNome());
+                System.out.println("[SubstitutionManager] REJEITADO jogador que nao pertence ao elenco do time " + teamIndex + ": " + (pIn != null ? pIn.getNome() : "null"));
                 inIt.remove();
             }
         }

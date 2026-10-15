@@ -612,29 +612,28 @@ public class InMatchHudManager {
                 int bugX = (w - bugW) / 2;
                 int bugY = 12;
 
-                int centerW = 92;
                 int midX = bugX + bugW / 2;
-                int centerX = midX - centerW / 2;
 
                 // Determina cores dos raios (Lightning Bolts)
                 Color boltColH = getVibrantAccent(colH_prim, colH_sec);
                 Color boltColA = getVibrantAccent(colA_prim, colA_sec);
 
                 // 1. Fundo Central Branco do Placar (Slanted Capsule / Polígono paralelo)
-                int cutH = centerX - 6;
-                int cutA = centerX + centerW - 6;
-                int boltW = 7;
+                int boltW = 18; // Raio mais grosso e pronunciado no padrão Premier League
+                int halfScoreSpan = 54;
+                int cutA = midX + halfScoreSpan - 6;
+                int cutH = midX - halfScoreSpan - 6 - boltW;
 
                 // 1. Fundo do Bloco Central Branco do Placar com corte em raio paralelo (\ e \)
                 GeneralPath pathScore = new GeneralPath();
                 pathScore.moveTo(cutH + 4 + boltW, bugY);
                 pathScore.lineTo(cutA + 4, bugY);
-                pathScore.lineTo(cutA + 13, bugY + 16);
-                pathScore.lineTo(cutA + 3, bugY + 18);
-                pathScore.lineTo(cutA + 11, bugY + bugH);
-                pathScore.lineTo(cutH + 11 + boltW, bugY + bugH);
-                pathScore.lineTo(cutH + 3 + boltW, bugY + 18);
-                pathScore.lineTo(cutH + 13 + boltW, bugY + 16);
+                pathScore.lineTo(cutA + 15, bugY + 16);
+                pathScore.lineTo(cutA + 4, bugY + 18);
+                pathScore.lineTo(cutA + 13, bugY + bugH);
+                pathScore.lineTo(cutH + 13 + boltW, bugY + bugH);
+                pathScore.lineTo(cutH + 4 + boltW, bugY + 18);
+                pathScore.lineTo(cutH + 15 + boltW, bugY + 16);
                 pathScore.closePath();
 
                 g2.setColor(Color.WHITE);
@@ -643,12 +642,12 @@ public class InMatchHudManager {
                 // 2. Traçado do Raio Mandante (Lightning Bolt Home - paralelo \)
                 GeneralPath boltH = new GeneralPath();
                 boltH.moveTo(cutH + 4, bugY);
-                boltH.lineTo(cutH + 13, bugY + 16);
-                boltH.lineTo(cutH + 3, bugY + 18);
-                boltH.lineTo(cutH + 11, bugY + bugH);
-                boltH.lineTo(cutH + 11 + boltW, bugY + bugH);
-                boltH.lineTo(cutH + 3 + boltW, bugY + 18);
-                boltH.lineTo(cutH + 13 + boltW, bugY + 16);
+                boltH.lineTo(cutH + 15, bugY + 16);
+                boltH.lineTo(cutH + 4, bugY + 18);
+                boltH.lineTo(cutH + 13, bugY + bugH);
+                boltH.lineTo(cutH + 13 + boltW, bugY + bugH);
+                boltH.lineTo(cutH + 4 + boltW, bugY + 18);
+                boltH.lineTo(cutH + 15 + boltW, bugY + 16);
                 boltH.lineTo(cutH + 4 + boltW, bugY);
                 boltH.closePath();
 
@@ -656,9 +655,9 @@ public class InMatchHudManager {
                 GeneralPath pathH = new GeneralPath();
                 pathH.moveTo(bugX + 6, bugY);
                 pathH.lineTo(cutH + 4, bugY);
-                pathH.lineTo(cutH + 13, bugY + 16);
-                pathH.lineTo(cutH + 3, bugY + 18);
-                pathH.lineTo(cutH + 11, bugY + bugH);
+                pathH.lineTo(cutH + 15, bugY + 16);
+                pathH.lineTo(cutH + 4, bugY + 18);
+                pathH.lineTo(cutH + 13, bugY + bugH);
                 pathH.lineTo(bugX + 6, bugY + bugH);
                 pathH.quadTo(bugX, bugY + bugH, bugX, bugY + bugH - 6);
                 pathH.lineTo(bugX, bugY + 6);
@@ -679,12 +678,12 @@ public class InMatchHudManager {
 
                 GeneralPath boltA = new GeneralPath();
                 boltA.moveTo(cutA + 4, bugY);
-                boltA.lineTo(cutA + 13, bugY + 16);
-                boltA.lineTo(cutA + 3, bugY + 18);
-                boltA.lineTo(cutA + 11, bugY + bugH);
-                boltA.lineTo(cutA + 11 + boltW, bugY + bugH);
-                boltA.lineTo(cutA + 3 + boltW, bugY + 18);
-                boltA.lineTo(cutA + 13 + boltW, bugY + 16);
+                boltA.lineTo(cutA + 15, bugY + 16);
+                boltA.lineTo(cutA + 4, bugY + 18);
+                boltA.lineTo(cutA + 13, bugY + bugH);
+                boltA.lineTo(cutA + 13 + boltW, bugY + bugH);
+                boltA.lineTo(cutA + 4 + boltW, bugY + 18);
+                boltA.lineTo(cutA + 15 + boltW, bugY + 16);
                 boltA.lineTo(cutA + 4 + boltW, bugY);
                 boltA.closePath();
 
@@ -694,9 +693,9 @@ public class InMatchHudManager {
                 pathA.quadTo(awayEndX, bugY, awayEndX, bugY + 6);
                 pathA.lineTo(awayEndX, bugY + bugH - 6);
                 pathA.quadTo(awayEndX, bugY + bugH, awayEndX - 6, bugY + bugH);
-                pathA.lineTo(cutA + 11 + boltW, bugY + bugH);
-                pathA.lineTo(cutA + 3 + boltW, bugY + 18);
-                pathA.lineTo(cutA + 13 + boltW, bugY + 16);
+                pathA.lineTo(cutA + 13 + boltW, bugY + bugH);
+                pathA.lineTo(cutA + 4 + boltW, bugY + 18);
+                pathA.lineTo(cutA + 15 + boltW, bugY + 16);
                 pathA.closePath();
 
                 Color drawColA = isNearWhite(colA_prim) ? new Color(248, 250, 252) : colA_prim;
@@ -743,7 +742,7 @@ public class InMatchHudManager {
                 }
 
                 Color txtColA = isLightColor(drawColA) ? new Color(15, 23, 42) : Color.WHITE;
-                int maxNameAW = (awayEndX - 36) - (cutA + 11 + boltW) - 4;
+                int maxNameAW = (awayEndX - 36) - (cutA + 15 + boltW) - 4;
                 int fontSizeA = 12;
                 Font fontA = new Font("Segoe UI", Font.BOLD, fontSizeA);
                 while (fontSizeA > 9 && g2.getFontMetrics(fontA).stringWidth(upperNameA) > maxNameAW) {

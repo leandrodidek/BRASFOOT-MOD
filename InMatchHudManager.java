@@ -3,10 +3,12 @@ package mod.brasfoot;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.geom.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
@@ -467,129 +469,344 @@ public class InMatchHudManager {
      * Constrói o Card do Placar estilo TV Broadcast EA FC (Premier League / La Liga).
      * Exibe nomes completos dos times (sem abreviação), escudos, caixas de gols translúcidas e cronômetro.
      */
+    // Variáveis de estado do placar estilo Premier League
+    private static best.I currentMatch = null;
+    private static JLabel currentSHome = null;
+    private static JLabel currentSAway = null;
+    private static JLabel currentMTime = null;
+    private static JLabel currentMPeriod = null;
+    private static JLabel currentStadium = null;
+    private static JLabel currentAtt = null;
+
+    private static boolean isLightColor(Color c) {
+        if (c == null) return false;
+        double luminance = (0.299 * c.getRed() + 0.587 * c.getGreen() + 0.114 * c.getBlue()) / 255.0;
+        return luminance > 0.65;
+    }
+
+    private static boolean isNearWhite(Color c) {
+        if (c == null) return false;
+        return c.getRed() > 220 && c.getGreen() > 220 && c.getBlue() > 220;
+    }
+
+    private static Color getVibrantAccent(Color prim, Color sec) {
+        if (sec != null && !isNearWhite(sec) && !isSimilarColor(prim, sec)) {
+            return sec;
+        }
+        if (isLightColor(prim)) {
+            return new Color(220, 38, 38); // Vermelho vibrante
+        } else {
+            return new Color(250, 204, 21); // Ouro / Amarelo elétrico Premier League
+        }
+    }
+
+    private static boolean isSimilarColor(Color c1, Color c2) {
+        if (c1 == null || c2 == null) return false;
+        int dr = Math.abs(c1.getRed() - c2.getRed());
+        int dg = Math.abs(c1.getGreen() - c2.getGreen());
+        int db = Math.abs(c1.getBlue() - c2.getBlue());
+        return (dr + dg + db) < 80;
+    }
+
     private static JPanel buildScoreboardCard(
             Object cDObj, best.I match,
             JLabel sHome, JLabel sAway, JLabel mTime, JLabel mPeriod,
             JLabel stadium, JLabel att
     ) {
+        currentMatch = match;
+        currentSHome = sHome;
+        currentSAway = sAway;
+        currentMTime = mTime;
+        currentMPeriod = mPeriod;
+        currentStadium = stadium;
+        currentAtt = att;
+
+        // Oculta componentes nativos brutos para evitar sobreposições feias
+        hideComponent(sHome);
+        hideComponent(sAway);
+        hideComponent(mTime);
+        hideComponent(mPeriod);
+        hideComponent(stadium);
+        hideComponent(att);
+
         JPanel card = new JPanel(null) {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
                 EaFcUiHelper.applyHighQualityRendering(g2);
+
+                int w = getWidth();
+                int h = getHeight();
+
+                // Fundo escuro do card geral
                 g2.setColor(PANEL_DARK);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+                g2.fillRoundRect(0, 0, w, h, 12, 12);
                 g2.setColor(BORDER_SLATE);
-                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 12, 12);
+                g2.drawRoundRect(0, 0, w - 1, h - 1, 12, 12);
 
-                // Barra Broadcast Interna
+                best.I m = currentMatch;
+
+                // Nomes dos clubes completos
+                String nameH = (m != null && m.hc() != null) ? m.hc().getNome() : "MANDANTE";
+                String nameA = (m != null && m.hd() != null) ? m.hd().getNome() : "VISITANTE";
+
+                // Cores dos clubes
+                Color colH_prim = (m != null && m.hc() != null && m.hc().kB() != null) ? m.hc().kB() : new Color(22, 22, 24);
+                Color colH_sec = (m != null && m.hc() != null && m.hc().kC() != null) ? m.hc().kC() : Color.WHITE;
+
+                Color colA_prim = (m != null && m.hd() != null && m.hd().kB() != null) ? m.hd().kB() : new Color(218, 41, 28);
+                Color colA_sec = (m != null && m.hd() != null && m.hd().kC() != null) ? m.hd().kC() : Color.WHITE;
+
+                if (isSimilarColor(colH_prim, colA_prim) && m != null && m.hd() != null && m.hd().kC() != null) {
+                    colA_prim = m.hd().kC();
+                }
+
+                // Escudos oficiais
+                ImageIcon crestH = (m != null && m.hc() != null) ? m.hc().x(22, 22) : null;
+                ImageIcon crestA = (m != null && m.hd() != null) ? m.hd().x(22, 22) : null;
+
+                // Placar
+                String scoreH = (currentSHome != null && currentSHome.getText() != null) ? currentSHome.getText().trim() : "0";
+                String scoreA = (currentSAway != null && currentSAway.getText() != null) ? currentSAway.getText().trim() : "0";
+
+                // Tempo e Período (1T ou 2T)
+                String periodRaw = (currentMPeriod != null && currentMPeriod.getText() != null) ? currentMPeriod.getText() : "1º";
+                String periodStr = "1T";
+                if (periodRaw.contains("2")) {
+                    periodStr = "2T";
+                } else if (periodRaw.toLowerCase().contains("pr") || periodRaw.toLowerCase().contains("pro")) {
+                    periodStr = "PR";
+                } else if (periodRaw.toLowerCase().contains("pen")) {
+                    periodStr = "PEN";
+                } else if (periodRaw.toLowerCase().contains("int")) {
+                    periodStr = "INT";
+                } else if (periodRaw.toLowerCase().contains("fim")) {
+                    periodStr = "FIM";
+                }
+
+                String timeRaw = (currentMTime != null && currentMTime.getText() != null) ? currentMTime.getText().trim() : "0'";
+                String timeStr = timeRaw;
+                if (timeStr.endsWith("'")) {
+                    String minOnly = timeStr.substring(0, timeStr.length() - 1);
+                    if (!minOnly.contains("+")) {
+                        try {
+                            int minVal = Integer.parseInt(minOnly);
+                            timeStr = String.format("%02d:00", minVal);
+                        } catch (Exception ignored) {}
+                    }
+                }
+
+                // Geometria do Scorebug estilo Premier League
+                int bugW = w - 24;
+                if (bugW > 416) bugW = 416;
+                int bugH = 38;
+                int bugX = (w - bugW) / 2;
+                int bugY = 12;
+
+                int centerW = 96;
+                int midX = bugX + bugW / 2;
+                int centerX = midX - centerW / 2;
+
+                // Determina cores dos raios (Lightning Bolts)
+                Color boltColH = getVibrantAccent(colH_prim, colH_sec);
+                Color boltColA = getVibrantAccent(colA_prim, colA_sec);
+
+                // 1. Fundo Central Branco do Placar
+                g2.setColor(Color.WHITE);
+                g2.fillRoundRect(centerX - 12, bugY, centerW + 24, bugH, 4, 4);
+
+                // 2. Traçado do Raio Mandante (Lightning Bolt Home)
+                int cutH = centerX - 4;
+                int boltW = 7;
+
+                GeneralPath boltH = new GeneralPath();
+                boltH.moveTo(cutH + 4, bugY);
+                boltH.lineTo(cutH + 13, bugY + 16);
+                boltH.lineTo(cutH + 3, bugY + 18);
+                boltH.lineTo(cutH + 11, bugY + bugH);
+                boltH.lineTo(cutH + 11 + boltW, bugY + bugH);
+                boltH.lineTo(cutH + 3 + boltW, bugY + 18);
+                boltH.lineTo(cutH + 13 + boltW, bugY + 16);
+                boltH.lineTo(cutH + 4 + boltW, bugY);
+                boltH.closePath();
+
+                // Bloco Mandante
+                GeneralPath pathH = new GeneralPath();
+                pathH.moveTo(bugX + 6, bugY);
+                pathH.lineTo(cutH + 4, bugY);
+                pathH.lineTo(cutH + 13, bugY + 16);
+                pathH.lineTo(cutH + 3, bugY + 18);
+                pathH.lineTo(cutH + 11, bugY + bugH);
+                pathH.lineTo(bugX + 6, bugY + bugH);
+                pathH.quadTo(bugX, bugY + bugH, bugX, bugY + bugH - 6);
+                pathH.lineTo(bugX, bugY + 6);
+                pathH.quadTo(bugX, bugY, bugX + 6, bugY);
+                pathH.closePath();
+
+                g2.setColor(colH_prim);
+                g2.fill(pathH);
+
+                g2.setColor(boltColH);
+                g2.fill(boltH);
+
+                g2.setColor(new Color(255, 255, 255, 50));
+                g2.draw(pathH);
+
+                // 3. Traçado do Raio Visitante (Lightning Bolt Away - espelhado)
+                int awayEndX = bugX + bugW;
+                int cutA = centerX + centerW + 4;
+
+                GeneralPath boltA = new GeneralPath();
+                boltA.moveTo(cutA - 4, bugY);
+                boltA.lineTo(cutA - 13, bugY + 16);
+                boltA.lineTo(cutA - 3, bugY + 18);
+                boltA.lineTo(cutA - 11, bugY + bugH);
+                boltA.lineTo(cutA - 11 - boltW, bugY + bugH);
+                boltA.lineTo(cutA - 3 - boltW, bugY + 18);
+                boltA.lineTo(cutA - 13 - boltW, bugY + 16);
+                boltA.lineTo(cutA - 4 - boltW, bugY);
+                boltA.closePath();
+
+                GeneralPath pathA = new GeneralPath();
+                pathA.moveTo(cutA - 4, bugY);
+                pathA.lineTo(awayEndX - 6, bugY);
+                pathA.quadTo(awayEndX, bugY, awayEndX, bugY + 6);
+                pathA.lineTo(awayEndX, bugY + bugH - 6);
+                pathA.quadTo(awayEndX, bugY + bugH, awayEndX - 6, bugY + bugH);
+                pathA.lineTo(cutA - 11, bugY + bugH);
+                pathA.lineTo(cutA - 3, bugY + 18);
+                pathA.lineTo(cutA - 13, bugY + 16);
+                pathA.closePath();
+
+                g2.setColor(colA_prim);
+                g2.fill(pathA);
+
+                g2.setColor(boltColA);
+                g2.fill(boltA);
+
+                g2.setColor(new Color(255, 255, 255, 50));
+                g2.draw(pathA);
+
+                // 4. Conteúdo Mandante: Escudo + NOME COMPLETO
+                int crestSize = 22;
+                int crestHY = bugY + (bugH - crestSize) / 2;
+                if (crestH != null && crestH.getImage() != null) {
+                    g2.drawImage(crestH.getImage(), bugX + 8, crestHY, crestSize, crestSize, null);
+                }
+
+                Color txtColH = isLightColor(colH_prim) ? new Color(15, 23, 42) : Color.WHITE;
+                int maxNameW = (cutH + 4) - (bugX + 36) - 6;
+                int fontSizeH = 12;
+                Font fontH = new Font("Segoe UI", Font.BOLD, fontSizeH);
+                while (fontSizeH > 9 && g2.getFontMetrics(fontH).stringWidth(nameH) > maxNameW) {
+                    fontSizeH--;
+                    fontH = new Font("Segoe UI", Font.BOLD, fontSizeH);
+                }
+                g2.setFont(fontH);
+                g2.setColor(txtColH);
+                FontMetrics fmH = g2.getFontMetrics();
+                g2.drawString(nameH, bugX + 36, bugY + (bugH - fmH.getHeight()) / 2 + fmH.getAscent());
+
+                // 5. Conteúdo Visitante: NOME COMPLETO + Escudo
+                int crestAY = bugY + (bugH - crestSize) / 2;
+                if (crestA != null && crestA.getImage() != null) {
+                    g2.drawImage(crestA.getImage(), awayEndX - 30, crestAY, crestSize, crestSize, null);
+                }
+
+                Color txtColA = isLightColor(colA_prim) ? new Color(15, 23, 42) : Color.WHITE;
+                int maxNameAW = (awayEndX - 36) - (cutA - 4) - 6;
+                int fontSizeA = 12;
+                Font fontA = new Font("Segoe UI", Font.BOLD, fontSizeA);
+                while (fontSizeA > 9 && g2.getFontMetrics(fontA).stringWidth(nameA) > maxNameAW) {
+                    fontSizeA--;
+                    fontA = new Font("Segoe UI", Font.BOLD, fontSizeA);
+                }
+                g2.setFont(fontA);
+                g2.setColor(txtColA);
+                FontMetrics fmA = g2.getFontMetrics();
+                int aNameW = fmA.stringWidth(nameA);
+                int textAX = awayEndX - 36 - aNameW;
+                g2.drawString(nameA, textAX, bugY + (bugH - fmA.getHeight()) / 2 + fmA.getAscent());
+
+                // 6. Placar Central (Números pretos no centro branco)
                 g2.setColor(new Color(15, 23, 42));
-                g2.fillRoundRect(8, 10, 424, 52, 8, 8);
-                g2.setColor(new Color(51, 65, 85));
-                g2.drawRoundRect(8, 10, 424, 52, 8, 8);
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 22));
+                FontMetrics fmScore = g2.getFontMetrics();
 
-                // Caixa do Placar Mandante
-                g2.setColor(new Color(24, 33, 52));
-                g2.fillRoundRect(148, 16, 36, 36, 6, 6);
-                g2.setColor(new Color(71, 85, 105));
-                g2.drawRoundRect(148, 16, 36, 36, 6, 6);
+                int scoreHW = fmScore.stringWidth(scoreH);
+                int scoreAW = fmScore.stringWidth(scoreA);
 
-                // Pill Central do Cronômetro
-                g2.setColor(new Color(16, 185, 129, 30));
-                g2.fillRoundRect(188, 19, 64, 30, 6, 6);
-                g2.setColor(new Color(16, 185, 129));
-                g2.drawRoundRect(188, 19, 64, 30, 6, 6);
+                g2.drawString(scoreH, midX - 26 - (scoreHW / 2), bugY + (bugH - fmScore.getHeight()) / 2 + fmScore.getAscent());
+                g2.drawString(scoreA, midX + 26 - (scoreAW / 2), bugY + (bugH - fmScore.getHeight()) / 2 + fmScore.getAscent());
 
-                // Caixa do Placar Visitante
-                g2.setColor(new Color(24, 33, 52));
-                g2.fillRoundRect(256, 16, 36, 36, 6, 6);
-                g2.setColor(new Color(71, 85, 105));
-                g2.drawRoundRect(256, 16, 36, 36, 6, 6);
+                // 7. Círculo Central com "1T" ou "2T" (com borda dourada)
+                int badgeD = 26;
+                int badgeX = midX - badgeD / 2;
+                int badgeY = bugY + (bugH - badgeD) / 2;
+
+                Color plPurple = new Color(56, 0, 60); // Roxo Premier League (#38003c)
+                g2.setColor(plPurple);
+                g2.fillOval(badgeX, badgeY, badgeD, badgeD);
+                g2.setColor(new Color(250, 204, 21)); // Borda dourada
+                g2.setStroke(new BasicStroke(1.5f));
+                g2.drawOval(badgeX, badgeY, badgeD, badgeD);
+
+                g2.setColor(Color.WHITE);
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 10));
+                FontMetrics fmP = g2.getFontMetrics();
+                int pw = fmP.stringWidth(periodStr);
+                g2.drawString(periodStr, midX - pw / 2, badgeY + (badgeD - fmP.getHeight()) / 2 + fmP.getAscent());
+
+                // 8. Aba Inferior do Tempo de Jogo (Cronômetro centralizado)
+                int tabW = 86;
+                int tabH = 19;
+                int tabX = midX - tabW / 2;
+                int tabY = bugY + bugH - 1;
+
+                GeneralPath pathTab = new GeneralPath();
+                pathTab.moveTo(tabX, tabY);
+                pathTab.lineTo(tabX + tabW, tabY);
+                pathTab.lineTo(tabX + tabW - 4, tabY + tabH - 4);
+                pathTab.quadTo(tabX + tabW - 4, tabY + tabH, tabX + tabW - 8, tabY + tabH);
+                pathTab.lineTo(tabX + 8, tabY + tabH);
+                pathTab.quadTo(tabX + 4, tabY + tabH, tabX + 4, tabY + tabH - 4);
+                pathTab.closePath();
+
+                g2.setColor(plPurple);
+                g2.fill(pathTab);
+                g2.setColor(new Color(255, 255, 255, 40));
+                g2.setStroke(new BasicStroke(1.0f));
+                g2.draw(pathTab);
+
+                g2.setColor(Color.WHITE);
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 11));
+                FontMetrics fmTime = g2.getFontMetrics();
+                int tw = fmTime.stringWidth(timeStr);
+                g2.drawString(timeStr, midX - tw / 2, tabY + (tabH - fmTime.getHeight()) / 2 + fmTime.getAscent());
+
+                // 9. Informações de Estádio e Torcedores abaixo
+                String stadText = (currentStadium != null && currentStadium.getText() != null) ? currentStadium.getText().trim() : "Estádio";
+                String attRaw = (currentAtt != null && currentAtt.getText() != null) ? currentAtt.getText().trim() : "";
+                String attFormatted = attRaw;
+                if (!attRaw.isEmpty()) {
+                    try {
+                        long num = Long.parseLong(attRaw.replaceAll("\\D", ""));
+                        attFormatted = String.format(Locale.GERMAN, "%,d", num);
+                    } catch (Exception ignored) {}
+                }
+
+                g2.setColor(new Color(180, 195, 215));
+                g2.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+                FontMetrics fmInfo = g2.getFontMetrics();
+                String infoStr = stadText + (attFormatted.isEmpty() ? "" : "   •   " + attFormatted + " torcedores");
+                int iw = fmInfo.stringWidth(infoStr);
+                g2.drawString(infoStr, (w - iw) / 2, 85);
 
                 g2.dispose();
             }
         };
         card.setOpaque(false);
-
-        String homeName = (match != null && match.hc() != null) ? match.hc().getNome() : "MANDANTE";
-        String awayName = (match != null && match.hd() != null) ? match.hd().getNome() : "VISITANTE";
-        ImageIcon crestH = (match != null && match.hc() != null) ? match.hc().x(24, 24) : null;
-        ImageIcon crestA = (match != null && match.hd() != null) ? match.hd().x(24, 24) : null;
-
-        // Escudo Mandante
-        lblScoreCrestH = new JLabel(crestH);
-        lblScoreCrestH.setBounds(14, 24, 24, 24);
-        card.add(lblScoreCrestH);
-
-        // Nome Mandante (Completo, auto-escala de fonte se for extenso)
-        lblScoreNameH = new JLabel(homeName);
-        int hLen = homeName.length();
-        lblScoreNameH.setFont(new Font("Segoe UI", Font.BOLD, hLen > 15 ? 10 : (hLen > 11 ? 11 : 12)));
-        lblScoreNameH.setForeground(TEXT_WHITE);
-        lblScoreNameH.setBounds(42, 17, 102, 36);
-        card.add(lblScoreNameH);
-
-        // Placar Mandante (Sem caixa preta sólida opaca do Brasfoot)
-        if (sHome != null) {
-            sHome.setOpaque(false);
-            sHome.setBackground(new Color(0, 0, 0, 0));
-            sHome.setFont(new Font("Segoe UI", Font.BOLD, 20));
-            sHome.setForeground(TEXT_WHITE);
-            sHome.setHorizontalAlignment(SwingConstants.CENTER);
-            sHome.setBounds(148, 16, 36, 36);
-            card.add(sHome);
-        }
-
-        // Pill Central do Cronômetro
-        String tText = (mTime != null && mTime.getText() != null) ? mTime.getText() : "0'";
-        String pText = (mPeriod != null && mPeriod.getText() != null) ? mPeriod.getText() : "1º";
-        lblScoreTimePeriod = new JLabel(tText + " • " + pText);
-        lblScoreTimePeriod.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        lblScoreTimePeriod.setForeground(EMERALD);
-        lblScoreTimePeriod.setHorizontalAlignment(SwingConstants.CENTER);
-        lblScoreTimePeriod.setBounds(188, 19, 64, 30);
-        card.add(lblScoreTimePeriod);
-
-        // Placar Visitante (Sem caixa preta sólida opaca do Brasfoot)
-        if (sAway != null) {
-            sAway.setOpaque(false);
-            sAway.setBackground(new Color(0, 0, 0, 0));
-            sAway.setFont(new Font("Segoe UI", Font.BOLD, 20));
-            sAway.setForeground(TEXT_WHITE);
-            sAway.setHorizontalAlignment(SwingConstants.CENTER);
-            sAway.setBounds(256, 16, 36, 36);
-            card.add(sAway);
-        }
-
-        // Nome Visitante (Completo, auto-escala de fonte se for extenso)
-        lblScoreNameA = new JLabel(awayName);
-        int aLen = awayName.length();
-        lblScoreNameA.setFont(new Font("Segoe UI", Font.BOLD, aLen > 15 ? 10 : (aLen > 11 ? 11 : 12)));
-        lblScoreNameA.setForeground(TEXT_WHITE);
-        lblScoreNameA.setHorizontalAlignment(SwingConstants.RIGHT);
-        lblScoreNameA.setBounds(296, 17, 102, 36);
-        card.add(lblScoreNameA);
-
-        // Escudo Visitante
-        lblScoreCrestA = new JLabel(crestA);
-        lblScoreCrestA.setBounds(402, 24, 24, 24);
-        card.add(lblScoreCrestA);
-
-        // Estádio e Público / Torcedores Integrados na Base
-        String stadText = (stadium != null && stadium.getText() != null) ? stadium.getText() : "Estádio";
-        String attText = (att != null && att.getText() != null) ? att.getText() : "";
-        String fullInfo = stadText;
-        if (!attText.isEmpty()) {
-            fullInfo += "   •   " + attText + " torcedores";
-        }
-        lblScoreStadiumAtt = new JLabel(fullInfo);
-        lblScoreStadiumAtt.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        lblScoreStadiumAtt.setForeground(TEXT_MUTED);
-        lblScoreStadiumAtt.setHorizontalAlignment(SwingConstants.CENTER);
-        lblScoreStadiumAtt.setBounds(10, 70, 420, 20);
-        card.add(lblScoreStadiumAtt);
-
         return card;
     }
 
@@ -598,46 +815,17 @@ public class InMatchHudManager {
             JLabel sHome, JLabel sAway, JLabel mTime, JLabel mPeriod,
             JLabel stadium, JLabel att
     ) {
-        if (scoreboardCard == null) return;
-        try {
-            if (sHome != null) {
-                sHome.setOpaque(false);
-                sHome.setBackground(new Color(0, 0, 0, 0));
-            }
-            if (sAway != null) {
-                sAway.setOpaque(false);
-                sAway.setBackground(new Color(0, 0, 0, 0));
-            }
-            if (lblScoreTimePeriod != null) {
-                String tText = (mTime != null && mTime.getText() != null) ? mTime.getText() : "0'";
-                String pText = (mPeriod != null && mPeriod.getText() != null) ? mPeriod.getText() : "1º";
-                lblScoreTimePeriod.setText(tText + " • " + pText);
-            }
-            if (lblScoreStadiumAtt != null) {
-                String stadText = (stadium != null && stadium.getText() != null) ? stadium.getText() : "Estádio";
-                String attText = (att != null && att.getText() != null) ? att.getText() : "";
-                String fullInfo = stadText;
-                if (!attText.isEmpty()) {
-                    fullInfo += "   •   " + attText + " torcedores";
-                }
-                lblScoreStadiumAtt.setText(fullInfo);
-            }
-            if (match != null) {
-                if (lblScoreNameH != null && match.hc() != null) {
-                    String hName = match.hc().getNome();
-                    lblScoreNameH.setText(hName);
-                    int hLen = hName.length();
-                    lblScoreNameH.setFont(new Font("Segoe UI", Font.BOLD, hLen > 15 ? 10 : (hLen > 11 ? 11 : 12)));
-                }
-                if (lblScoreNameA != null && match.hd() != null) {
-                    String aName = match.hd().getNome();
-                    lblScoreNameA.setText(aName);
-                    int aLen = aName.length();
-                    lblScoreNameA.setFont(new Font("Segoe UI", Font.BOLD, aLen > 15 ? 10 : (aLen > 11 ? 11 : 12)));
-                }
-            }
-        } catch (Exception ignored) {}
-        scoreboardCard.repaint();
+        currentMatch = match;
+        currentSHome = sHome;
+        currentSAway = sAway;
+        currentMTime = mTime;
+        currentMPeriod = mPeriod;
+        currentStadium = stadium;
+        currentAtt = att;
+
+        if (scoreboardCard != null) {
+            scoreboardCard.repaint();
+        }
     }
 
     /**

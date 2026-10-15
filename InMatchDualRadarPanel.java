@@ -89,18 +89,14 @@ public class InMatchDualRadarPanel extends JPanel {
         g2.setStroke(new BasicStroke(1.0f));
         g2.drawRoundRect(0, 0, w - 1, h - 1, 12, 12);
 
-        // 2. Badges dos Times no Topo (Aos lados)
-        drawTeamBadge(g2, 12, 10, 195, 38, homeName, homeCrest, homeOvr, HOME_COLOR, true);
-        drawTeamBadge(g2, w - 207, 10, 195, 38, awayName, awayCrest, awayOvr, AWAY_COLOR, false);
-
-        // 3. Radar Hexagonal Centralizado Sobreposto
+        // 2. Radar Hexagonal Centralizado Sobreposto (Espaço nobre sem poluição visual)
         int cx = w / 2;
-        int cy = 160;
-        int r = 70;
+        int cy = (h - 26) / 2;
+        int r = 74;
 
         drawOverlaidHexRadar(g2, cx, cy, r);
 
-        // 4. Legenda Comparativa na Base
+        // 3. Legenda Comparativa na Base (Com Nome e Overall de cada time)
         drawBottomLegend(g2, cx, h - 14);
 
         g2.dispose();

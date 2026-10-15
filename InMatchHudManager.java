@@ -62,6 +62,9 @@ public class InMatchHudManager {
     private static JPanel oppInfoCard = null;
     private static JLabel lblOppCoach = null;
     private static JLabel lblOppFormation = null;
+    private static JLabel lblOppEstilo = null;
+    private static JLabel lblOppMarcacao = null;
+    private static JLabel lblOppSubs = null;
 
     /**
      * Configura todo o layout widescreen da tela de treinador durante a partida.
@@ -94,6 +97,11 @@ public class InMatchHudManager {
             oppBenchLabel = null;
             lblHomeHeader = null;
             lblAwayHeader = null;
+            lblOppCoach = null;
+            lblOppFormation = null;
+            lblOppEstilo = null;
+            lblOppMarcacao = null;
+            lblOppSubs = null;
 
             // Componentes nativos de cD
             components.v matchComp = (components.v) getFieldValue(cDObj, "Db");
@@ -130,10 +138,10 @@ public class InMatchHudManager {
 
             int activeTeam = getIntField(cDObj, "Di", 1); // 1 = Casa, 2 = Fora
 
-            // Sincroniza imediatamente o texto de subsLbl com as substituições REAIS do motor
+            // Sincroniza imediatamente o texto de subsLbl com as substituições REAIS do time HUMANO
+            int userTeamIndex = (match != null && match.hd() != null && match.hd().jZ() != null && match.hd().jZ().booleanValue()) ? 1 : 0;
             if (subsLbl != null && match != null) {
-                int teamIdx = activeTeam - 1;
-                int remaining = match.aR(teamIdx);
+                int remaining = match.aR(userTeamIndex);
                 subsLbl.setText("Substituições restantes: " + remaining);
             }
 
@@ -387,8 +395,8 @@ public class InMatchHudManager {
 
             JLabel subsLbl = (JLabel) getFieldValue(cDObj, "DA");
             if (subsLbl != null && match != null) {
-                int teamIdx = activeTeam - 1;
-                int remaining = match.aR(teamIdx);
+                int userTeamIndex = (match.hd() != null && match.hd().jZ() != null && match.hd().jZ().booleanValue()) ? 1 : 0;
+                int remaining = match.aR(userTeamIndex);
                 subsLbl.setText("Substituições restantes: " + remaining);
                 subsLbl.repaint();
             }
@@ -604,7 +612,7 @@ public class InMatchHudManager {
                 int bugX = (w - bugW) / 2;
                 int bugY = 12;
 
-                int centerW = 96;
+                int centerW = 92;
                 int midX = bugX + bugW / 2;
                 int centerX = midX - centerW / 2;
 
@@ -612,14 +620,27 @@ public class InMatchHudManager {
                 Color boltColH = getVibrantAccent(colH_prim, colH_sec);
                 Color boltColA = getVibrantAccent(colA_prim, colA_sec);
 
-                // 1. Fundo Central Branco do Placar
-                g2.setColor(Color.WHITE);
-                g2.fillRoundRect(centerX - 12, bugY, centerW + 24, bugH, 4, 4);
-
-                // 2. Traçado do Raio Mandante (Lightning Bolt Home)
-                int cutH = centerX - 4;
+                // 1. Fundo Central Branco do Placar (Slanted Capsule / Polígono paralelo)
+                int cutH = centerX - 6;
+                int cutA = centerX + centerW - 6;
                 int boltW = 7;
 
+                // 1. Fundo do Bloco Central Branco do Placar com corte em raio paralelo (\ e \)
+                GeneralPath pathScore = new GeneralPath();
+                pathScore.moveTo(cutH + 4 + boltW, bugY);
+                pathScore.lineTo(cutA + 4, bugY);
+                pathScore.lineTo(cutA + 13, bugY + 16);
+                pathScore.lineTo(cutA + 3, bugY + 18);
+                pathScore.lineTo(cutA + 11, bugY + bugH);
+                pathScore.lineTo(cutH + 11 + boltW, bugY + bugH);
+                pathScore.lineTo(cutH + 3 + boltW, bugY + 18);
+                pathScore.lineTo(cutH + 13 + boltW, bugY + 16);
+                pathScore.closePath();
+
+                g2.setColor(Color.WHITE);
+                g2.fill(pathScore);
+
+                // 2. Traçado do Raio Mandante (Lightning Bolt Home - paralelo \)
                 GeneralPath boltH = new GeneralPath();
                 boltH.moveTo(cutH + 4, bugY);
                 boltH.lineTo(cutH + 13, bugY + 16);
@@ -653,42 +674,48 @@ public class InMatchHudManager {
                 g2.setColor(new Color(255, 255, 255, 50));
                 g2.draw(pathH);
 
-                // 3. Traçado do Raio Visitante (Lightning Bolt Away - espelhado)
+                // 3. Traçado do Raio Visitante (Lightning Bolt Away - PARALELO \, mesmo ângulo da Premier League!)
                 int awayEndX = bugX + bugW;
-                int cutA = centerX + centerW + 4;
 
                 GeneralPath boltA = new GeneralPath();
-                boltA.moveTo(cutA - 4, bugY);
-                boltA.lineTo(cutA - 13, bugY + 16);
-                boltA.lineTo(cutA - 3, bugY + 18);
-                boltA.lineTo(cutA - 11, bugY + bugH);
-                boltA.lineTo(cutA - 11 - boltW, bugY + bugH);
-                boltA.lineTo(cutA - 3 - boltW, bugY + 18);
-                boltA.lineTo(cutA - 13 - boltW, bugY + 16);
-                boltA.lineTo(cutA - 4 - boltW, bugY);
+                boltA.moveTo(cutA + 4, bugY);
+                boltA.lineTo(cutA + 13, bugY + 16);
+                boltA.lineTo(cutA + 3, bugY + 18);
+                boltA.lineTo(cutA + 11, bugY + bugH);
+                boltA.lineTo(cutA + 11 + boltW, bugY + bugH);
+                boltA.lineTo(cutA + 3 + boltW, bugY + 18);
+                boltA.lineTo(cutA + 13 + boltW, bugY + 16);
+                boltA.lineTo(cutA + 4 + boltW, bugY);
                 boltA.closePath();
 
                 GeneralPath pathA = new GeneralPath();
-                pathA.moveTo(cutA - 4, bugY);
+                pathA.moveTo(cutA + 4 + boltW, bugY);
                 pathA.lineTo(awayEndX - 6, bugY);
                 pathA.quadTo(awayEndX, bugY, awayEndX, bugY + 6);
                 pathA.lineTo(awayEndX, bugY + bugH - 6);
                 pathA.quadTo(awayEndX, bugY + bugH, awayEndX - 6, bugY + bugH);
-                pathA.lineTo(cutA - 11, bugY + bugH);
-                pathA.lineTo(cutA - 3, bugY + 18);
-                pathA.lineTo(cutA - 13, bugY + 16);
+                pathA.lineTo(cutA + 11 + boltW, bugY + bugH);
+                pathA.lineTo(cutA + 3 + boltW, bugY + 18);
+                pathA.lineTo(cutA + 13 + boltW, bugY + 16);
                 pathA.closePath();
 
-                g2.setColor(colA_prim);
+                Color drawColA = isNearWhite(colA_prim) ? new Color(248, 250, 252) : colA_prim;
+                g2.setColor(drawColA);
                 g2.fill(pathA);
 
                 g2.setColor(boltColA);
                 g2.fill(boltA);
 
-                g2.setColor(new Color(255, 255, 255, 50));
-                g2.draw(pathA);
+                if (isNearWhite(colA_prim)) {
+                    g2.setColor(new Color(203, 213, 225));
+                    g2.draw(pathA);
+                } else {
+                    g2.setColor(new Color(255, 255, 255, 50));
+                    g2.draw(pathA);
+                }
 
-                // 4. Conteúdo Mandante: Escudo + NOME COMPLETO
+                // 4. Conteúdo Mandante: Escudo + NOME COMPLETO (UPPERCASE)
+                String upperNameH = nameH.toUpperCase();
                 int crestSize = 22;
                 int crestHY = bugY + (bugH - crestSize) / 2;
                 if (crestH != null && crestH.getImage() != null) {
@@ -696,38 +723,39 @@ public class InMatchHudManager {
                 }
 
                 Color txtColH = isLightColor(colH_prim) ? new Color(15, 23, 42) : Color.WHITE;
-                int maxNameW = (cutH + 4) - (bugX + 36) - 6;
+                int maxNameW = (cutH + 4) - (bugX + 36) - 4;
                 int fontSizeH = 12;
                 Font fontH = new Font("Segoe UI", Font.BOLD, fontSizeH);
-                while (fontSizeH > 9 && g2.getFontMetrics(fontH).stringWidth(nameH) > maxNameW) {
+                while (fontSizeH > 9 && g2.getFontMetrics(fontH).stringWidth(upperNameH) > maxNameW) {
                     fontSizeH--;
                     fontH = new Font("Segoe UI", Font.BOLD, fontSizeH);
                 }
                 g2.setFont(fontH);
                 g2.setColor(txtColH);
                 FontMetrics fmH = g2.getFontMetrics();
-                g2.drawString(nameH, bugX + 36, bugY + (bugH - fmH.getHeight()) / 2 + fmH.getAscent());
+                g2.drawString(upperNameH, bugX + 36, bugY + (bugH - fmH.getHeight()) / 2 + fmH.getAscent());
 
-                // 5. Conteúdo Visitante: NOME COMPLETO + Escudo
+                // 5. Conteúdo Visitante: NOME COMPLETO (UPPERCASE) + Escudo
+                String upperNameA = nameA.toUpperCase();
                 int crestAY = bugY + (bugH - crestSize) / 2;
                 if (crestA != null && crestA.getImage() != null) {
                     g2.drawImage(crestA.getImage(), awayEndX - 30, crestAY, crestSize, crestSize, null);
                 }
 
-                Color txtColA = isLightColor(colA_prim) ? new Color(15, 23, 42) : Color.WHITE;
-                int maxNameAW = (awayEndX - 36) - (cutA - 4) - 6;
+                Color txtColA = isLightColor(drawColA) ? new Color(15, 23, 42) : Color.WHITE;
+                int maxNameAW = (awayEndX - 36) - (cutA + 11 + boltW) - 4;
                 int fontSizeA = 12;
                 Font fontA = new Font("Segoe UI", Font.BOLD, fontSizeA);
-                while (fontSizeA > 9 && g2.getFontMetrics(fontA).stringWidth(nameA) > maxNameAW) {
+                while (fontSizeA > 9 && g2.getFontMetrics(fontA).stringWidth(upperNameA) > maxNameAW) {
                     fontSizeA--;
                     fontA = new Font("Segoe UI", Font.BOLD, fontSizeA);
                 }
                 g2.setFont(fontA);
                 g2.setColor(txtColA);
                 FontMetrics fmA = g2.getFontMetrics();
-                int aNameW = fmA.stringWidth(nameA);
-                int textAX = awayEndX - 36 - aNameW;
-                g2.drawString(nameA, textAX, bugY + (bugH - fmA.getHeight()) / 2 + fmA.getAscent());
+                int aNameW = fmA.stringWidth(upperNameA);
+                int textAX = (awayEndX - 36) - aNameW - 4;
+                g2.drawString(upperNameA, textAX, bugY + (bugH - fmA.getHeight()) / 2 + fmA.getAscent());
 
                 // 6. Placar Central (Números pretos no centro branco)
                 g2.setColor(new Color(15, 23, 42));
@@ -1094,15 +1122,9 @@ public class InMatchHudManager {
         if (coachLbl != null) {
             coachLbl.setFont(new Font("Verdana", Font.BOLD, 12));
             coachLbl.setForeground(TEXT_WHITE);
-            coachLbl.setBounds(15, 38, 250, 20);
+            coachLbl.setBounds(15, 38, 350, 20);
             card.add(coachLbl);
         }
-
-        JLabel lblFocus = new JLabel("Foco: Equilíbrio e Posse");
-        lblFocus.setFont(new Font("Verdana", Font.PLAIN, 11));
-        lblFocus.setForeground(TEXT_MUTED);
-        lblFocus.setBounds(280, 38, 250, 20);
-        card.add(lblFocus);
 
         styleLabel(lblEstilo, "Estilo de jogo:");
         styleLabel(lblMarcacao, "Marcação:");
@@ -1121,16 +1143,10 @@ public class InMatchHudManager {
         if (lblAtaque != null) { lblAtaque.setBounds(415, 66, 190, 16); card.add(lblAtaque); }
         if (cbAtaque != null) { cbAtaque.setBounds(415, 86, 190, 32); card.add(cbAtaque); }
 
-        JLabel lblTip = new JLabel("As alterações táticas entram em vigor imediatamente após o reinício da partida.");
-        lblTip.setFont(new Font("Verdana", Font.PLAIN, 10));
-        lblTip.setForeground(TEXT_MUTED);
-        lblTip.setBounds(15, 134, 580, 18);
-        card.add(lblTip);
-
         return card;
     }
 
-    private static JPanel createOppStatBox(String title, String value) {
+    private static JPanel createOppStatBox(String title, JLabel lblValue) {
         JPanel box = new JPanel(null) {
             @Override
             protected void paintComponent(Graphics g) {
@@ -1152,11 +1168,12 @@ public class InMatchHudManager {
         lblT.setBounds(10, 6, 170, 16);
         box.add(lblT);
 
-        JLabel lblV = new JLabel(value);
-        lblV.setFont(new Font("Verdana", Font.BOLD, 11));
-        lblV.setForeground(TEXT_WHITE);
-        lblV.setBounds(10, 24, 170, 24);
-        box.add(lblV);
+        if (lblValue != null) {
+            lblValue.setFont(new Font("Verdana", Font.BOLD, 11));
+            lblValue.setForeground(TEXT_WHITE);
+            lblValue.setBounds(10, 24, 170, 24);
+            box.add(lblValue);
+        }
 
         return box;
     }
@@ -1177,10 +1194,13 @@ public class InMatchHudManager {
         };
         card.setOpaque(false);
 
+        int userTeamIndex = (match != null && match.hd() != null && match.hd().jZ() != null && match.hd().jZ().booleanValue()) ? 1 : 0;
+        best.ah oppTeam = (userTeamIndex == 0) ? (match != null ? match.hd() : null) : (match != null ? match.hc() : null);
+
         String coach = "Adversário";
         try {
-            if (match != null && match.hd() != null && match.hd().ka() != null) {
-                coach = match.hd().ka().dS();
+            if (oppTeam != null && oppTeam.ka() != null) {
+                coach = oppTeam.ka().dS();
             }
         } catch (Exception ignored) {}
 
@@ -1192,7 +1212,7 @@ public class InMatchHudManager {
         lblTitle.setBounds(15, 12, 350, 20);
         card.add(lblTitle);
 
-        // Esquema Tático posicionado no topo direito dentro do card (substituindo o antigo badge CPU)
+        // Esquema Tático posicionado no topo direito dentro do card
         lblOppFormation = new JLabel("ESQUEMA: " + formation);
         lblOppFormation.setFont(new Font("Segoe UI", Font.BOLD, 11));
         lblOppFormation.setForeground(GOLD_ACCENT);
@@ -1210,16 +1230,31 @@ public class InMatchHudManager {
         lblOppCoach.setBounds(15, 38, 400, 20);
         card.add(lblOppCoach);
 
-        // 3 caixas de status tático
-        JPanel box1 = createOppStatBox("POSTURA DEFENSIVA", "Linhas Compactas");
+        String initialEstilo = "Equilibrado";
+        String initialMarcacao = "Pesada";
+        if (oppTeam != null && oppTeam.kj() != null) {
+            if (oppTeam.kj().length > 1 && oppTeam.kj()[1] >= 0 && oppTeam.kj()[1] < best.aq.rC.length) {
+                initialEstilo = best.aq.rC[oppTeam.kj()[1]];
+            }
+            if (oppTeam.kj().length > 2 && oppTeam.kj()[2] >= 0 && oppTeam.kj()[2] < best.aq.rE.length) {
+                initialMarcacao = best.aq.rE[oppTeam.kj()[2]];
+            }
+        }
+
+        lblOppEstilo = new JLabel(initialEstilo);
+        lblOppMarcacao = new JLabel(initialMarcacao);
+        lblOppSubs = new JLabel("0 de 5 realizadas");
+
+        // 3 caixas de status tático com nomes REAIS do Brasfoot
+        JPanel box1 = createOppStatBox("ESTILO DE JOGO", lblOppEstilo);
         box1.setBounds(15, 66, 185, 56);
         card.add(box1);
 
-        JPanel box2 = createOppStatBox("CRIAÇÃO DE JOGADAS", "Transição Rápida");
+        JPanel box2 = createOppStatBox("MARCAÇÃO", lblOppMarcacao);
         box2.setBounds(215, 66, 185, 56);
         card.add(box2);
 
-        JPanel box3 = createOppStatBox("SUBSTITUIÇÕES", "0 de 5 realizadas");
+        JPanel box3 = createOppStatBox("SUBSTITUIÇÕES", lblOppSubs);
         box3.setBounds(415, 66, 190, 56);
         card.add(box3);
 
@@ -1229,15 +1264,34 @@ public class InMatchHudManager {
     private static void updateOpponentInfo(best.I match, JLabel formLbl) {
         if (oppInfoCard == null) return;
         try {
+            int userTeamIndex = (match != null && match.hd() != null && match.hd().jZ() != null && match.hd().jZ().booleanValue()) ? 1 : 0;
+            best.ah oppTeam = (userTeamIndex == 0) ? (match != null ? match.hd() : null) : (match != null ? match.hc() : null);
+            int oppTeamIndex = (userTeamIndex == 0) ? 1 : 0;
+
             String coach = "Adversário";
-            if (match != null && match.hd() != null && match.hd().ka() != null) {
-                coach = match.hd().ka().dS();
+            if (oppTeam != null && oppTeam.ka() != null) {
+                coach = oppTeam.ka().dS();
             }
             if (lblOppCoach != null) {
                 lblOppCoach.setText("Técnico: " + coach);
             }
             if (lblOppFormation != null && formLbl != null && formLbl.getText() != null) {
                 lblOppFormation.setText("ESQUEMA: " + formLbl.getText());
+            }
+            if (lblOppEstilo != null && oppTeam != null && oppTeam.kj() != null && oppTeam.kj().length > 1) {
+                int idx = oppTeam.kj()[1];
+                String estilo = (idx >= 0 && idx < best.aq.rC.length) ? best.aq.rC[idx] : "Equilibrado";
+                lblOppEstilo.setText(estilo);
+            }
+            if (lblOppMarcacao != null && oppTeam != null && oppTeam.kj() != null && oppTeam.kj().length > 2) {
+                int idx = oppTeam.kj()[2];
+                String marc = (idx >= 0 && idx < best.aq.rE.length) ? best.aq.rE[idx] : "Pesada";
+                lblOppMarcacao.setText(marc);
+            }
+            if (lblOppSubs != null && match != null) {
+                int oppRemaining = match.aR(oppTeamIndex);
+                int oppUsed = Math.max(0, 5 - oppRemaining);
+                lblOppSubs.setText(oppUsed + " de 5 realizadas");
             }
         } catch (Exception ignored) {}
         oppInfoCard.repaint();

@@ -170,8 +170,8 @@ public class EaFcUiHelper {
         g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
         g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 
-        // Centro horizontal alinhado com a camisa (45px de largura)
-        int cx = (i == 3) ? 73 : ((i == 2) ? 75 : 74);
+        // Centro horizontal rigorosamente alinhado com o centro das camisas desenhadas em components.ao
+        int cx = (i == 2) ? 55 : 53;
 
         int forca = f2.fi(); // Força real do jogador (10-99)
         int energia = f2.fp(); // Energia/stamina (0-100)

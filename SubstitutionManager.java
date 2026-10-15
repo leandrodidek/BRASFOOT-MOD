@@ -42,23 +42,27 @@ public class SubstitutionManager {
             System.out.println("[SubstitutionManager] Session started. Initial starters recorded -> Mandante: " 
                 + initialStartersMandante.size() + ", Visitante: " + initialStartersVisitante.size());
 
-            // Atualiza imediatamente o contador DA com as substituições reais restantes
+            // Atualiza imediatamente o contador DA com as substituições reais restantes do time humano
             try {
-                Field diField = clazz.getDeclaredField("Di");
-                diField.setAccessible(true);
-                int di = diField.getInt(cDInstance);
-                int teamIndex = di - 1;
-
                 Field dbField = clazz.getDeclaredField("Db");
                 dbField.setAccessible(true);
                 components.v vObj = (components.v) dbField.get(cDInstance);
-                best.I matchEngine = vObj.tR();
+                best.I matchEngine = (vObj != null) ? vObj.tR() : null;
+
+                int userTeamIndex = 0;
+                if (matchEngine != null && matchEngine.hd() != null && matchEngine.hd().jZ() != null && matchEngine.hd().jZ().booleanValue()) {
+                    userTeamIndex = 1;
+                }
+
+                Field diField = clazz.getDeclaredField("Di");
+                diField.setAccessible(true);
+                diField.setInt(cDInstance, userTeamIndex + 1);
 
                 Field daField = clazz.getDeclaredField("DA");
                 daField.setAccessible(true);
                 JLabel lblDA = (JLabel) daField.get(cDInstance);
                 if (lblDA != null && matchEngine != null) {
-                    int remaining = matchEngine.aR(teamIndex);
+                    int remaining = matchEngine.aR(userTeamIndex);
                     lblDA.setText("Substituições restantes: " + remaining);
                 }
             } catch (Exception ignored) {}
@@ -111,11 +115,13 @@ public class SubstitutionManager {
             components.v vObj = (components.v) dbField.get(cDInstance);
             best.I matchEngine = vObj.tR();
 
-            // SEGURANÇA MÁXIMA: Só permite substituição se o time ativo for controlado por HUMANO!
+            // SEGURANÇA MÁXIMA: Garante que as substituições do usuário sejam aplicadas no time HUMANO
             best.ah activeTeam = (teamIndex == 0) ? matchEngine.hc() : matchEngine.hd();
             if (activeTeam == null || activeTeam.jZ() == null || !activeTeam.jZ().booleanValue()) {
-                System.out.println("[SubstitutionManager] Troca bloqueada: o time ativo (" + teamIndex + ") e controlado pela CPU!");
-                return;
+                int userTeamIndex = (matchEngine.hd() != null && matchEngine.hd().jZ() != null && matchEngine.hd().jZ().booleanValue()) ? 1 : 0;
+                teamIndex = userTeamIndex;
+                diField.setInt(cDInstance, teamIndex + 1);
+                activeTeam = (teamIndex == 0) ? matchEngine.hc() : matchEngine.hd();
             }
 
             // Pega a lista de jogadores correta (AE para time 0, Dc para time 1)

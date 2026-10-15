@@ -622,12 +622,10 @@ public class InMatchHudManager {
                 int cutA = midX + halfScoreSpan - 6;
                 int cutH = midX - halfScoreSpan - 6 - boltW;
 
-                int scoreY = bugY - 3;
-                int scoreBoxH = (bugY + bugH) - scoreY; // Projeta 3px acima da barra
-
+                // 1. Fundo do Bloco Central Branco do Placar (100% rente a bugY e bugY + bugH, sem dentes ou degraus)
                 GeneralPath pathScore = new GeneralPath();
-                pathScore.moveTo(cutH + 4 + boltW, scoreY);
-                pathScore.lineTo(cutA + 4, scoreY);
+                pathScore.moveTo(cutH + 4 + boltW, bugY);
+                pathScore.lineTo(cutA + 4, bugY);
                 pathScore.lineTo(cutA + 16, bugY + bugH / 2);
                 pathScore.lineTo(cutA + 5, bugY + bugH / 2 + 2);
                 pathScore.lineTo(cutA + 14, bugY + bugH);
@@ -760,37 +758,52 @@ public class InMatchHudManager {
                 int textAX = (awayEndX - 36) - aNameW - 4;
                 g2.drawString(upperNameA, textAX, bugY + (bugH - fmA.getHeight()) / 2 + fmA.getAscent());
 
-                // 6. Placar Central: Números de gols GIGANTES (34pt Bold) padrão Premier League
+                // 6. Placar Central: Números de gols GIGANTES (34pt Bold) padrão broadcast com traço "-" no centro
                 g2.setColor(new Color(15, 23, 42));
-                g2.setFont(new Font("Segoe UI", Font.BOLD, 34));
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 32));
                 FontMetrics fmScore = g2.getFontMetrics();
 
                 int scoreHW = fmScore.stringWidth(scoreH);
                 int scoreAW = fmScore.stringWidth(scoreA);
 
-                int scoreNumY = scoreY + (scoreBoxH - fmScore.getHeight()) / 2 + fmScore.getAscent() + 2;
-                g2.drawString(scoreH, midX - 26 - (scoreHW / 2), scoreNumY);
-                g2.drawString(scoreA, midX + 26 - (scoreAW / 2), scoreNumY);
+                int scoreNumY = bugY + (bugH - fmScore.getHeight()) / 2 + fmScore.getAscent() + 1;
+                g2.drawString(scoreH, midX - 25 - (scoreHW / 2), scoreNumY);
+                g2.drawString(scoreA, midX + 25 - (scoreAW / 2), scoreNumY);
 
-                // 7. Círculo Central com "1T" ou "2T" (com borda dourada elegante)
-                int badgeD = 24;
-                int badgeX = midX - badgeD / 2;
-                int badgeY = scoreY + (scoreBoxH - badgeD) / 2;
+                // Traço "-" separador no centro
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 22));
+                FontMetrics fmDash = g2.getFontMetrics();
+                int dashW = fmDash.stringWidth("-");
+                g2.drawString("-", midX - (dashW / 2), bugY + (bugH - fmDash.getHeight()) / 2 + fmDash.getAscent());
 
                 Color plPurple = new Color(56, 0, 60); // Roxo Premier League (#38003c)
+
+                // 7. Card Superior de Período (1T ou 2T) no mesmo molde do card da minutagem
+                int topTabW = 76;
+                int topTabH = 17;
+                int topTabX = midX - topTabW / 2;
+                int topTabY = bugY - topTabH;
+
+                GeneralPath pTopTab = new GeneralPath();
+                pTopTab.moveTo(topTabX, bugY); // Base reta rente à barra
+                pTopTab.lineTo(topTabX + topTabW, bugY);
+                pTopTab.lineTo(topTabX + topTabW, topTabY + 6); // Lateral reta (sem caimento!)
+                pTopTab.quadTo(topTabX + topTabW, topTabY, topTabX + topTabW - 6, topTabY); // Canto superior direito arredondado
+                pTopTab.lineTo(topTabX + 6, topTabY);
+                pTopTab.quadTo(topTabX, topTabY, topTabX, topTabY + 6); // Canto superior esquerdo arredondado
+                pTopTab.closePath();
+
                 g2.setColor(plPurple);
-                g2.fillOval(badgeX, badgeY, badgeD, badgeD);
-                g2.setColor(new Color(250, 204, 21)); // Borda dourada
-                g2.setStroke(new BasicStroke(1.8f));
-                g2.drawOval(badgeX, badgeY, badgeD, badgeD);
+                g2.fill(pTopTab);
+                // Sem linha branca em volta do card de período!
 
                 g2.setColor(Color.WHITE);
                 g2.setFont(new Font("Segoe UI", Font.BOLD, 11));
                 FontMetrics fmP = g2.getFontMetrics();
                 int pw = fmP.stringWidth(periodStr);
-                g2.drawString(periodStr, midX - pw / 2, badgeY + (badgeD - fmP.getHeight()) / 2 + fmP.getAscent());
+                g2.drawString(periodStr, midX - pw / 2, topTabY + (topTabH - fmP.getHeight()) / 2 + fmP.getAscent() + 1);
 
-                // 8. Card do Tempo: RETO nas laterais (sem caimento!) com cantos inferiores arredondados
+                // 8. Card do Tempo: RETO nas laterais (sem caimento!) com cantos inferiores arredondados (SEM LINHA BRANCA!)
                 int tabW = 88;
                 int tabH = 20;
                 int tabX = midX - tabW / 2;
@@ -807,16 +820,13 @@ public class InMatchHudManager {
 
                 g2.setColor(plPurple);
                 g2.fill(pathTab);
-                g2.setColor(new Color(255, 255, 255, 40));
-                g2.draw(pathTab);
+                // SEM LINHA BRANCA EM VOLTA DO CARD DE MINUTAGEM!
 
                 g2.setColor(Color.WHITE);
                 g2.setFont(new Font("Segoe UI", Font.BOLD, 13));
                 FontMetrics fmT = g2.getFontMetrics();
                 int tw = fmT.stringWidth(timeStr);
                 g2.drawString(timeStr, midX - tw / 2, tabY + (tabH - fmT.getHeight()) / 2 + fmT.getAscent());
-                g2.setStroke(new BasicStroke(1.0f));
-                g2.draw(pathTab);
 
                 // 9. Informações de Estádio e Torcedores abaixo
                 String stadText = (currentStadium != null && currentStadium.getText() != null) ? currentStadium.getText().trim() : "Estádio";

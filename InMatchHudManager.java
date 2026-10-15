@@ -139,9 +139,8 @@ public class InMatchHudManager {
             int activeTeam = getIntField(cDObj, "Di", 1); // 1 = Casa, 2 = Fora
 
             // Sincroniza imediatamente o texto de subsLbl com as substituições REAIS do time HUMANO
-            int userTeamIndex = (match != null && match.hd() != null && match.hd().jZ() != null && match.hd().jZ().booleanValue()) ? 1 : 0;
-            if (subsLbl != null && match != null) {
-                int remaining = match.aR(userTeamIndex);
+            if (subsLbl != null) {
+                int remaining = SubstitutionManager.getPendingRemainingSubs(cDObj);
                 subsLbl.setText("Substituições restantes: " + remaining);
             }
 
@@ -284,27 +283,27 @@ public class InMatchHudManager {
                 root.add(scoreboardCard);
             }
 
-            // 6.2 Log de Eventos da Partida (y: 112, h: 180)
+            // 6.2 Log de Eventos da Partida (Feed ampliado para maior visibilidade - y: 112, h: 220)
             if (scrollEvents != null) {
-                scrollEvents.setBounds(650, 112, 440, 180);
+                scrollEvents.setBounds(650, 112, 440, 220);
                 styleEventsTable(scrollEvents, tableEvents);
             }
 
-            // 6.3 Estatísticas Comparativas em Barras (y: 298, h: 180)
+            // 6.3 Estatísticas Comparativas em Barras (y: 338, h: 165)
             if (statsPanel == null) {
                 statsPanel = new InMatchStatsPanel();
             }
-            statsPanel.setBounds(650, 298, 440, 180);
+            statsPanel.setBounds(650, 338, 440, 165);
             if (match != null) statsPanel.updateStats(match);
             if (!isChildOf(root, statsPanel)) {
                 root.add(statsPanel);
             }
 
-            // 6.4 Radar Tático Hexagonal Comparativo Sobreposto (y: 485, h: 295)
+            // 6.4 Radar Tático Hexagonal Comparativo Sobreposto (y: 510, h: 276 - posicionado mais abaixo)
             if (radarPanel == null) {
                 radarPanel = new InMatchDualRadarPanel();
             }
-            radarPanel.setBounds(650, 485, 440, 295);
+            radarPanel.setBounds(650, 510, 440, 276);
             updateRadarStats(cDObj, match);
             if (!isChildOf(root, radarPanel)) {
                 root.add(radarPanel);
@@ -394,9 +393,8 @@ public class InMatchHudManager {
             }
 
             JLabel subsLbl = (JLabel) getFieldValue(cDObj, "DA");
-            if (subsLbl != null && match != null) {
-                int userTeamIndex = (match.hd() != null && match.hd().jZ() != null && match.hd().jZ().booleanValue()) ? 1 : 0;
-                int remaining = match.aR(userTeamIndex);
+            if (subsLbl != null) {
+                int remaining = SubstitutionManager.getPendingRemainingSubs(cDObj);
                 subsLbl.setText("Substituições restantes: " + remaining);
                 subsLbl.repaint();
             }
@@ -619,7 +617,7 @@ public class InMatchHudManager {
                 Color boltColA = getVibrantAccent(colA_prim, colA_sec);
 
                 // 1. Fundo Central Branco do Placar (com protrusão de 3px no topo)
-                int boltW = 18; // Raio mais grosso e pronunciado no padrão Premier League
+                int boltW = 15; // Raio proporcional, mais nítido e com espaço nobre para os clubes
                 int halfScoreSpan = 52;
                 int cutA = midX + halfScoreSpan - 6;
                 int cutH = midX - halfScoreSpan - 6 - boltW;
@@ -729,7 +727,7 @@ public class InMatchHudManager {
 
                 Color txtColH = isLightColor(colH_prim) ? new Color(15, 23, 42) : Color.WHITE;
                 int maxNameW = (cutH + 4) - (bugX + 36) - 4;
-                int fontSizeH = 13;
+                int fontSizeH = 15;
                 Font fontH = new Font("Segoe UI", Font.BOLD, fontSizeH);
                 while (fontSizeH > 9 && g2.getFontMetrics(fontH).stringWidth(upperNameH) > maxNameW) {
                     fontSizeH--;
@@ -749,7 +747,7 @@ public class InMatchHudManager {
 
                 Color txtColA = isLightColor(drawColA) ? new Color(15, 23, 42) : Color.WHITE;
                 int maxNameAW = (awayEndX - 36) - (cutA + 16 + boltW) - 4;
-                int fontSizeA = 13;
+                int fontSizeA = 15;
                 Font fontA = new Font("Segoe UI", Font.BOLD, fontSizeA);
                 while (fontSizeA > 9 && g2.getFontMetrics(fontA).stringWidth(upperNameA) > maxNameAW) {
                     fontSizeA--;
@@ -762,17 +760,17 @@ public class InMatchHudManager {
                 int textAX = (awayEndX - 36) - aNameW - 4;
                 g2.drawString(upperNameA, textAX, bugY + (bugH - fmA.getHeight()) / 2 + fmA.getAscent());
 
-                // 6. Placar Central: Números de gols maiores (28pt Bold), passando ligeiramente da barra
+                // 6. Placar Central: Números de gols GIGANTES (34pt Bold) padrão Premier League
                 g2.setColor(new Color(15, 23, 42));
-                g2.setFont(new Font("Segoe UI", Font.BOLD, 28));
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 34));
                 FontMetrics fmScore = g2.getFontMetrics();
 
                 int scoreHW = fmScore.stringWidth(scoreH);
                 int scoreAW = fmScore.stringWidth(scoreA);
 
-                int scoreNumY = scoreY + (scoreBoxH - fmScore.getHeight()) / 2 + fmScore.getAscent() + 1;
-                g2.drawString(scoreH, midX - 25 - (scoreHW / 2), scoreNumY);
-                g2.drawString(scoreA, midX + 25 - (scoreAW / 2), scoreNumY);
+                int scoreNumY = scoreY + (scoreBoxH - fmScore.getHeight()) / 2 + fmScore.getAscent() + 2;
+                g2.drawString(scoreH, midX - 26 - (scoreHW / 2), scoreNumY);
+                g2.drawString(scoreA, midX + 26 - (scoreAW / 2), scoreNumY);
 
                 // 7. Círculo Central com "1T" ou "2T" (com borda dourada elegante)
                 int badgeD = 24;
@@ -793,8 +791,8 @@ public class InMatchHudManager {
                 g2.drawString(periodStr, midX - pw / 2, badgeY + (badgeD - fmP.getHeight()) / 2 + fmP.getAscent());
 
                 // 8. Card do Tempo: RETO nas laterais (sem caimento!) com cantos inferiores arredondados
-                int tabW = 86;
-                int tabH = 19;
+                int tabW = 88;
+                int tabH = 20;
                 int tabX = midX - tabW / 2;
                 int tabY = bugY + bugH;
 
@@ -813,7 +811,7 @@ public class InMatchHudManager {
                 g2.draw(pathTab);
 
                 g2.setColor(Color.WHITE);
-                g2.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 13));
                 FontMetrics fmT = g2.getFontMetrics();
                 int tw = fmT.stringWidth(timeStr);
                 g2.drawString(timeStr, midX - tw / 2, tabY + (tabH - fmT.getHeight()) / 2 + fmT.getAscent());
@@ -1091,6 +1089,37 @@ public class InMatchHudManager {
         return slots;
     }
 
+    private static JPanel createTacticalControlBox(String title, JComboBox<?> combo) {
+        JPanel box = new JPanel(null) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                EaFcUiHelper.applyHighQualityRendering(g2);
+                g2.setColor(CARD_BG);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.setColor(BORDER_SLATE);
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 8, 8);
+                g2.dispose();
+            }
+        };
+        box.setOpaque(false);
+
+        JLabel lblT = new JLabel(title);
+        lblT.setFont(new Font("Segoe UI", Font.BOLD, 9));
+        lblT.setForeground(TEXT_MUTED);
+        lblT.setBounds(12, 10, 162, 16);
+        box.add(lblT);
+
+        if (combo != null) {
+            EaFcUiHelper.styleModernComboBox(combo);
+            combo.setBounds(10, 32, 166, 36);
+            box.add(combo);
+        }
+
+        return box;
+    }
+
     private static JPanel buildUserTacticsCard(
             JLabel subsLbl, JLabel coachLbl,
             JLabel lblEstilo, JComboBox<?> cbEstilo,
@@ -1121,8 +1150,12 @@ public class InMatchHudManager {
         if (subsLbl != null) {
             subsLbl.setFont(new Font("Segoe UI", Font.BOLD, 11));
             subsLbl.setForeground(EMERALD);
-            subsLbl.setHorizontalAlignment(SwingConstants.RIGHT);
-            subsLbl.setBounds(430, 10, 175, 24);
+            subsLbl.setHorizontalAlignment(SwingConstants.CENTER);
+            subsLbl.setBounds(400, 10, 205, 26);
+            subsLbl.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(EMERALD, 1, true),
+                BorderFactory.createEmptyBorder(2, 6, 2, 6)
+            ));
             card.add(subsLbl);
         }
 
@@ -1133,22 +1166,18 @@ public class InMatchHudManager {
             card.add(coachLbl);
         }
 
-        styleLabel(lblEstilo, "Estilo de jogo:");
-        styleLabel(lblMarcacao, "Marcação:");
-        styleLabel(lblAtaque, "Concentrar ataques:");
+        // 3 Caixas organizadas lado a lado idênticas ao painel do adversário:
+        JPanel boxEstilo = createTacticalControlBox("ESTILO DE JOGO", cbEstilo);
+        boxEstilo.setBounds(15, 66, 186, 78);
+        card.add(boxEstilo);
 
-        EaFcUiHelper.styleModernComboBox(cbEstilo);
-        EaFcUiHelper.styleModernComboBox(cbMarcacao);
-        EaFcUiHelper.styleModernComboBox(cbAtaque);
+        JPanel boxMarcacao = createTacticalControlBox("MARCAÇÃO", cbMarcacao);
+        boxMarcacao.setBounds(217, 66, 186, 78);
+        card.add(boxMarcacao);
 
-        if (lblEstilo != null) { lblEstilo.setBounds(15, 66, 185, 16); card.add(lblEstilo); }
-        if (cbEstilo != null) { cbEstilo.setBounds(15, 86, 185, 32); card.add(cbEstilo); }
-
-        if (lblMarcacao != null) { lblMarcacao.setBounds(215, 66, 185, 16); card.add(lblMarcacao); }
-        if (cbMarcacao != null) { cbMarcacao.setBounds(215, 86, 185, 32); card.add(cbMarcacao); }
-
-        if (lblAtaque != null) { lblAtaque.setBounds(415, 66, 190, 16); card.add(lblAtaque); }
-        if (cbAtaque != null) { cbAtaque.setBounds(415, 86, 190, 32); card.add(cbAtaque); }
+        JPanel boxAtaque = createTacticalControlBox("CONCENTRAR ATAQUES", cbAtaque);
+        boxAtaque.setBounds(419, 66, 186, 78);
+        card.add(boxAtaque);
 
         return card;
     }
@@ -1172,13 +1201,13 @@ public class InMatchHudManager {
         JLabel lblT = new JLabel(title);
         lblT.setFont(new Font("Segoe UI", Font.BOLD, 9));
         lblT.setForeground(TEXT_MUTED);
-        lblT.setBounds(10, 6, 170, 16);
+        lblT.setBounds(12, 10, 162, 16);
         box.add(lblT);
 
         if (lblValue != null) {
-            lblValue.setFont(new Font("Verdana", Font.BOLD, 11));
+            lblValue.setFont(new Font("Segoe UI", Font.BOLD, 13));
             lblValue.setForeground(TEXT_WHITE);
-            lblValue.setBounds(10, 24, 170, 24);
+            lblValue.setBounds(12, 34, 162, 30);
             box.add(lblValue);
         }
 
@@ -1224,7 +1253,7 @@ public class InMatchHudManager {
         lblOppFormation.setFont(new Font("Segoe UI", Font.BOLD, 11));
         lblOppFormation.setForeground(GOLD_ACCENT);
         lblOppFormation.setHorizontalAlignment(SwingConstants.CENTER);
-        lblOppFormation.setBounds(440, 10, 165, 24);
+        lblOppFormation.setBounds(410, 10, 195, 26);
         lblOppFormation.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(GOLD_ACCENT, 1, true),
             BorderFactory.createEmptyBorder(2, 6, 2, 6)
@@ -1252,17 +1281,17 @@ public class InMatchHudManager {
         lblOppMarcacao = new JLabel(initialMarcacao);
         lblOppSubs = new JLabel("0 de 5 realizadas");
 
-        // 3 caixas de status tático com nomes REAIS do Brasfoot
+        // 3 caixas de status tático com nomes REAIS do Brasfoot perfeitamente alinhadas
         JPanel box1 = createOppStatBox("ESTILO DE JOGO", lblOppEstilo);
-        box1.setBounds(15, 66, 185, 56);
+        box1.setBounds(15, 66, 186, 78);
         card.add(box1);
 
         JPanel box2 = createOppStatBox("MARCAÇÃO", lblOppMarcacao);
-        box2.setBounds(215, 66, 185, 56);
+        box2.setBounds(217, 66, 186, 78);
         card.add(box2);
 
         JPanel box3 = createOppStatBox("SUBSTITUIÇÕES", lblOppSubs);
-        box3.setBounds(415, 66, 190, 56);
+        box3.setBounds(419, 66, 186, 78);
         card.add(box3);
 
         return card;

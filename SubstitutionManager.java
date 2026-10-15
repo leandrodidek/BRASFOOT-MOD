@@ -185,7 +185,7 @@ public class SubstitutionManager {
                 daField.setAccessible(true);
                 JLabel lblDA = (JLabel) daField.get(cDInstance);
                 if (lblDA != null) {
-                    int remaining = totalAllowed - currentNetSubs;
+                    int remaining = getPendingRemainingSubs(cDInstance);
                     lblDA.setText("Substituições restantes: " + remaining);
                 }
             } catch (Exception ignored) {}
@@ -211,6 +211,49 @@ public class SubstitutionManager {
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    public static int getPendingRemainingSubs(Object cDInstance) {
+        if (cDInstance == null) return 5;
+        try {
+            Class<?> clazz = cDInstance.getClass();
+            Field dbField = clazz.getDeclaredField("Db");
+            dbField.setAccessible(true);
+            components.v vObj = (components.v) dbField.get(cDInstance);
+            best.I matchEngine = (vObj != null) ? vObj.tR() : null;
+            if (matchEngine == null) return 5;
+
+            int userTeamIndex = (matchEngine.hd() != null && matchEngine.hd().jZ() != null && matchEngine.hd().jZ().booleanValue()) ? 1 : 0;
+            int totalAllowed = matchEngine.aR(userTeamIndex);
+
+            Field listField = (userTeamIndex == 1) ? clazz.getDeclaredField("Dc") : clazz.getDeclaredField("AE");
+            listField.setAccessible(true);
+            ArrayList<?> list = (ArrayList<?>) listField.get(cDInstance);
+            Map<Integer, best.F> initialStarters = (userTeamIndex == 1) ? initialStartersVisitante : initialStartersMandante;
+            if (initialStarters.isEmpty() || list == null) {
+                return totalAllowed;
+            }
+
+            Set<best.F> currentField = new HashSet<>();
+            for (int s = 1; s <= 25 && s < list.size(); s++) {
+                components.ao ao = (components.ao) list.get(s);
+                if (ao != null && ao.x() != null) {
+                    currentField.add(ao.x());
+                }
+            }
+
+            int changed = 0;
+            for (best.F orig : initialStarters.values()) {
+                if (orig != null && !currentField.contains(orig)) {
+                    changed++;
+                }
+            }
+
+            int remaining = totalAllowed - changed;
+            return Math.max(0, remaining);
+        } catch (Exception e) {
+            return 5;
         }
     }
 

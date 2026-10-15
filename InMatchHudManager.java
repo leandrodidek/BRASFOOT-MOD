@@ -618,91 +618,97 @@ public class InMatchHudManager {
                 Color boltColH = getVibrantAccent(colH_prim, colH_sec);
                 Color boltColA = getVibrantAccent(colA_prim, colA_sec);
 
-                // 1. Fundo Central Branco do Placar (Slanted Capsule / Polígono paralelo)
+                // 1. Fundo Central Branco do Placar (com protrusão de 3px no topo)
                 int boltW = 18; // Raio mais grosso e pronunciado no padrão Premier League
-                int halfScoreSpan = 54;
+                int halfScoreSpan = 52;
                 int cutA = midX + halfScoreSpan - 6;
                 int cutH = midX - halfScoreSpan - 6 - boltW;
 
-                // 1. Fundo do Bloco Central Branco do Placar com corte em raio paralelo (\ e \)
+                int scoreY = bugY - 3;
+                int scoreBoxH = (bugY + bugH) - scoreY; // Projeta 3px acima da barra
+
                 GeneralPath pathScore = new GeneralPath();
-                pathScore.moveTo(cutH + 4 + boltW, bugY);
-                pathScore.lineTo(cutA + 4, bugY);
-                pathScore.lineTo(cutA + 15, bugY + 16);
-                pathScore.lineTo(cutA + 4, bugY + 18);
-                pathScore.lineTo(cutA + 13, bugY + bugH);
-                pathScore.lineTo(cutH + 13 + boltW, bugY + bugH);
-                pathScore.lineTo(cutH + 4 + boltW, bugY + 18);
-                pathScore.lineTo(cutH + 15 + boltW, bugY + 16);
+                pathScore.moveTo(cutH + 4 + boltW, scoreY);
+                pathScore.lineTo(cutA + 4, scoreY);
+                pathScore.lineTo(cutA + 16, bugY + bugH / 2);
+                pathScore.lineTo(cutA + 5, bugY + bugH / 2 + 2);
+                pathScore.lineTo(cutA + 14, bugY + bugH);
+                pathScore.lineTo(cutH + 14 + boltW, bugY + bugH);
+                pathScore.lineTo(cutH + 5 + boltW, bugY + bugH / 2 + 2);
+                pathScore.lineTo(cutH + 16 + boltW, bugY + bugH / 2);
                 pathScore.closePath();
 
                 g2.setColor(Color.WHITE);
                 g2.fill(pathScore);
 
-                // 2. Traçado do Raio Mandante (Lightning Bolt Home - paralelo \)
+                // 2. Traçado do Raio Mandante com DEGRADÊ de fora para dentro (secundária -> primária)
                 GeneralPath boltH = new GeneralPath();
                 boltH.moveTo(cutH + 4, bugY);
-                boltH.lineTo(cutH + 15, bugY + 16);
-                boltH.lineTo(cutH + 4, bugY + 18);
-                boltH.lineTo(cutH + 13, bugY + bugH);
-                boltH.lineTo(cutH + 13 + boltW, bugY + bugH);
-                boltH.lineTo(cutH + 4 + boltW, bugY + 18);
-                boltH.lineTo(cutH + 15 + boltW, bugY + 16);
+                boltH.lineTo(cutH + 16, bugY + bugH / 2);
+                boltH.lineTo(cutH + 5, bugY + bugH / 2 + 2);
+                boltH.lineTo(cutH + 14, bugY + bugH);
+                boltH.lineTo(cutH + 14 + boltW, bugY + bugH);
+                boltH.lineTo(cutH + 5 + boltW, bugY + bugH / 2 + 2);
+                boltH.lineTo(cutH + 16 + boltW, bugY + bugH / 2);
                 boltH.lineTo(cutH + 4 + boltW, bugY);
                 boltH.closePath();
 
-                // Bloco Mandante
+                GradientPaint gpBoltH = new GradientPaint(cutH + 4, bugY, boltColH, cutH + 16 + boltW, bugY, colH_prim);
+
+                // Bloco Mandante: Cantos SUPERIORES arredondados, INFERIORES RETOS (90°)
                 GeneralPath pathH = new GeneralPath();
-                pathH.moveTo(bugX + 6, bugY);
+                pathH.moveTo(bugX + 7, bugY);
                 pathH.lineTo(cutH + 4, bugY);
-                pathH.lineTo(cutH + 15, bugY + 16);
-                pathH.lineTo(cutH + 4, bugY + 18);
-                pathH.lineTo(cutH + 13, bugY + bugH);
-                pathH.lineTo(bugX + 6, bugY + bugH);
-                pathH.quadTo(bugX, bugY + bugH, bugX, bugY + bugH - 6);
-                pathH.lineTo(bugX, bugY + 6);
-                pathH.quadTo(bugX, bugY, bugX + 6, bugY);
+                pathH.lineTo(cutH + 16, bugY + bugH / 2);
+                pathH.lineTo(cutH + 5, bugY + bugH / 2 + 2);
+                pathH.lineTo(cutH + 14, bugY + bugH);
+                pathH.lineTo(bugX, bugY + bugH); // Canto inferior reto!
+                pathH.lineTo(bugX, bugY + 7);
+                pathH.quadTo(bugX, bugY, bugX + 7, bugY); // Canto superior arredondado!
                 pathH.closePath();
 
                 g2.setColor(colH_prim);
                 g2.fill(pathH);
 
-                g2.setColor(boltColH);
+                g2.setPaint(gpBoltH);
                 g2.fill(boltH);
 
                 g2.setColor(new Color(255, 255, 255, 50));
                 g2.draw(pathH);
 
-                // 3. Traçado do Raio Visitante (Lightning Bolt Away - PARALELO \, mesmo ângulo da Premier League!)
+                // 3. Traçado do Raio Visitante com DEGRADÊ de fora para dentro (secundária -> primária)
                 int awayEndX = bugX + bugW;
 
                 GeneralPath boltA = new GeneralPath();
                 boltA.moveTo(cutA + 4, bugY);
-                boltA.lineTo(cutA + 15, bugY + 16);
-                boltA.lineTo(cutA + 4, bugY + 18);
-                boltA.lineTo(cutA + 13, bugY + bugH);
-                boltA.lineTo(cutA + 13 + boltW, bugY + bugH);
-                boltA.lineTo(cutA + 4 + boltW, bugY + 18);
-                boltA.lineTo(cutA + 15 + boltW, bugY + 16);
+                boltA.lineTo(cutA + 16, bugY + bugH / 2);
+                boltA.lineTo(cutA + 5, bugY + bugH / 2 + 2);
+                boltA.lineTo(cutA + 14, bugY + bugH);
+                boltA.lineTo(cutA + 14 + boltW, bugY + bugH);
+                boltA.lineTo(cutA + 5 + boltW, bugY + bugH / 2 + 2);
+                boltA.lineTo(cutA + 16 + boltW, bugY + bugH / 2);
                 boltA.lineTo(cutA + 4 + boltW, bugY);
                 boltA.closePath();
 
+                Color awayEdgeCol = isNearWhite(colA_prim) ? new Color(203, 213, 225) : colA_prim;
+                GradientPaint gpBoltA = new GradientPaint(cutA + 16 + boltW, bugY, boltColA, cutA + 4, bugY, awayEdgeCol);
+
+                // Bloco Visitante: Cantos SUPERIORES arredondados, INFERIORES RETOS (90°)
                 GeneralPath pathA = new GeneralPath();
                 pathA.moveTo(cutA + 4 + boltW, bugY);
-                pathA.lineTo(awayEndX - 6, bugY);
-                pathA.quadTo(awayEndX, bugY, awayEndX, bugY + 6);
-                pathA.lineTo(awayEndX, bugY + bugH - 6);
-                pathA.quadTo(awayEndX, bugY + bugH, awayEndX - 6, bugY + bugH);
-                pathA.lineTo(cutA + 13 + boltW, bugY + bugH);
-                pathA.lineTo(cutA + 4 + boltW, bugY + 18);
-                pathA.lineTo(cutA + 15 + boltW, bugY + 16);
+                pathA.lineTo(awayEndX - 7, bugY);
+                pathA.quadTo(awayEndX, bugY, awayEndX, bugY + 7); // Canto superior arredondado!
+                pathA.lineTo(awayEndX, bugY + bugH); // Canto inferior reto!
+                pathA.lineTo(cutA + 14 + boltW, bugY + bugH);
+                pathA.lineTo(cutA + 5 + boltW, bugY + bugH / 2 + 2);
+                pathA.lineTo(cutA + 16 + boltW, bugY + bugH / 2);
                 pathA.closePath();
 
                 Color drawColA = isNearWhite(colA_prim) ? new Color(248, 250, 252) : colA_prim;
                 g2.setColor(drawColA);
                 g2.fill(pathA);
 
-                g2.setColor(boltColA);
+                g2.setPaint(gpBoltA);
                 g2.fill(boltA);
 
                 if (isNearWhite(colA_prim)) {
@@ -723,7 +729,7 @@ public class InMatchHudManager {
 
                 Color txtColH = isLightColor(colH_prim) ? new Color(15, 23, 42) : Color.WHITE;
                 int maxNameW = (cutH + 4) - (bugX + 36) - 4;
-                int fontSizeH = 12;
+                int fontSizeH = 13;
                 Font fontH = new Font("Segoe UI", Font.BOLD, fontSizeH);
                 while (fontSizeH > 9 && g2.getFontMetrics(fontH).stringWidth(upperNameH) > maxNameW) {
                     fontSizeH--;
@@ -742,8 +748,8 @@ public class InMatchHudManager {
                 }
 
                 Color txtColA = isLightColor(drawColA) ? new Color(15, 23, 42) : Color.WHITE;
-                int maxNameAW = (awayEndX - 36) - (cutA + 15 + boltW) - 4;
-                int fontSizeA = 12;
+                int maxNameAW = (awayEndX - 36) - (cutA + 16 + boltW) - 4;
+                int fontSizeA = 13;
                 Font fontA = new Font("Segoe UI", Font.BOLD, fontSizeA);
                 while (fontSizeA > 9 && g2.getFontMetrics(fontA).stringWidth(upperNameA) > maxNameAW) {
                     fontSizeA--;
@@ -756,61 +762,63 @@ public class InMatchHudManager {
                 int textAX = (awayEndX - 36) - aNameW - 4;
                 g2.drawString(upperNameA, textAX, bugY + (bugH - fmA.getHeight()) / 2 + fmA.getAscent());
 
-                // 6. Placar Central (Números pretos no centro branco)
+                // 6. Placar Central: Números de gols maiores (28pt Bold), passando ligeiramente da barra
                 g2.setColor(new Color(15, 23, 42));
-                g2.setFont(new Font("Segoe UI", Font.BOLD, 22));
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 28));
                 FontMetrics fmScore = g2.getFontMetrics();
 
                 int scoreHW = fmScore.stringWidth(scoreH);
                 int scoreAW = fmScore.stringWidth(scoreA);
 
-                g2.drawString(scoreH, midX - 26 - (scoreHW / 2), bugY + (bugH - fmScore.getHeight()) / 2 + fmScore.getAscent());
-                g2.drawString(scoreA, midX + 26 - (scoreAW / 2), bugY + (bugH - fmScore.getHeight()) / 2 + fmScore.getAscent());
+                int scoreNumY = scoreY + (scoreBoxH - fmScore.getHeight()) / 2 + fmScore.getAscent() + 1;
+                g2.drawString(scoreH, midX - 25 - (scoreHW / 2), scoreNumY);
+                g2.drawString(scoreA, midX + 25 - (scoreAW / 2), scoreNumY);
 
-                // 7. Círculo Central com "1T" ou "2T" (com borda dourada)
-                int badgeD = 26;
+                // 7. Círculo Central com "1T" ou "2T" (com borda dourada elegante)
+                int badgeD = 24;
                 int badgeX = midX - badgeD / 2;
-                int badgeY = bugY + (bugH - badgeD) / 2;
+                int badgeY = scoreY + (scoreBoxH - badgeD) / 2;
 
                 Color plPurple = new Color(56, 0, 60); // Roxo Premier League (#38003c)
                 g2.setColor(plPurple);
                 g2.fillOval(badgeX, badgeY, badgeD, badgeD);
                 g2.setColor(new Color(250, 204, 21)); // Borda dourada
-                g2.setStroke(new BasicStroke(1.5f));
+                g2.setStroke(new BasicStroke(1.8f));
                 g2.drawOval(badgeX, badgeY, badgeD, badgeD);
 
                 g2.setColor(Color.WHITE);
-                g2.setFont(new Font("Segoe UI", Font.BOLD, 10));
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 11));
                 FontMetrics fmP = g2.getFontMetrics();
                 int pw = fmP.stringWidth(periodStr);
                 g2.drawString(periodStr, midX - pw / 2, badgeY + (badgeD - fmP.getHeight()) / 2 + fmP.getAscent());
 
-                // 8. Aba Inferior do Tempo de Jogo (Cronômetro centralizado)
+                // 8. Card do Tempo: RETO nas laterais (sem caimento!) com cantos inferiores arredondados
                 int tabW = 86;
                 int tabH = 19;
                 int tabX = midX - tabW / 2;
-                int tabY = bugY + bugH - 1;
+                int tabY = bugY + bugH;
 
                 GeneralPath pathTab = new GeneralPath();
                 pathTab.moveTo(tabX, tabY);
-                pathTab.lineTo(tabX + tabW, tabY);
-                pathTab.lineTo(tabX + tabW - 4, tabY + tabH - 4);
-                pathTab.quadTo(tabX + tabW - 4, tabY + tabH, tabX + tabW - 8, tabY + tabH);
-                pathTab.lineTo(tabX + 8, tabY + tabH);
-                pathTab.quadTo(tabX + 4, tabY + tabH, tabX + 4, tabY + tabH - 4);
+                pathTab.lineTo(tabX + tabW, tabY); // Topo reto
+                pathTab.lineTo(tabX + tabW, tabY + tabH - 6); // Lateral reta (sem caimento!)
+                pathTab.quadTo(tabX + tabW, tabY + tabH, tabX + tabW - 6, tabY + tabH); // Canto inferior direito arredondado
+                pathTab.lineTo(tabX + 6, tabY + tabH);
+                pathTab.quadTo(tabX, tabY + tabH, tabX, tabY + tabH - 6); // Canto inferior esquerdo arredondado
                 pathTab.closePath();
 
                 g2.setColor(plPurple);
                 g2.fill(pathTab);
                 g2.setColor(new Color(255, 255, 255, 40));
-                g2.setStroke(new BasicStroke(1.0f));
                 g2.draw(pathTab);
 
                 g2.setColor(Color.WHITE);
-                g2.setFont(new Font("Segoe UI", Font.BOLD, 11));
-                FontMetrics fmTime = g2.getFontMetrics();
-                int tw = fmTime.stringWidth(timeStr);
-                g2.drawString(timeStr, midX - tw / 2, tabY + (tabH - fmTime.getHeight()) / 2 + fmTime.getAscent());
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                FontMetrics fmT = g2.getFontMetrics();
+                int tw = fmT.stringWidth(timeStr);
+                g2.drawString(timeStr, midX - tw / 2, tabY + (tabH - fmT.getHeight()) / 2 + fmT.getAscent());
+                g2.setStroke(new BasicStroke(1.0f));
+                g2.draw(pathTab);
 
                 // 9. Informações de Estádio e Torcedores abaixo
                 String stadText = (currentStadium != null && currentStadium.getText() != null) ? currentStadium.getText().trim() : "Estádio";

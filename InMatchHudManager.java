@@ -576,31 +576,45 @@ public class InMatchHudManager {
                 String scoreH = (currentSHome != null && currentSHome.getText() != null) ? currentSHome.getText().trim() : "0";
                 String scoreA = (currentSAway != null && currentSAway.getText() != null) ? currentSAway.getText().trim() : "0";
 
-                // Tempo e Período (1T ou 2T)
+                // Tempo e Período (Padrão Oficial Contínuo: 0-45 no 1T e 45-90 no 2T)
                 String periodRaw = (currentMPeriod != null && currentMPeriod.getText() != null) ? currentMPeriod.getText() : "1º";
-                String periodStr = "1T";
-                if (periodRaw.contains("2")) {
-                    periodStr = "2T";
-                } else if (periodRaw.toLowerCase().contains("pr") || periodRaw.toLowerCase().contains("pro")) {
-                    periodStr = "PR";
-                } else if (periodRaw.toLowerCase().contains("pen")) {
-                    periodStr = "PEN";
-                } else if (periodRaw.toLowerCase().contains("int")) {
-                    periodStr = "INT";
-                } else if (periodRaw.toLowerCase().contains("fim")) {
-                    periodStr = "FIM";
-                }
+                boolean isSecondHalf = periodRaw.contains("2") || periodRaw.toLowerCase().contains("2t");
+                boolean isExtraTime = periodRaw.toLowerCase().contains("pr") || periodRaw.toLowerCase().contains("pro");
+                boolean isHalfTime = periodRaw.toLowerCase().contains("int");
+                boolean isFullTime = periodRaw.toLowerCase().contains("fim");
 
                 String timeRaw = (currentMTime != null && currentMTime.getText() != null) ? currentMTime.getText().trim() : "0'";
                 String timeStr = timeRaw;
-                if (timeStr.endsWith("'")) {
-                    String minOnly = timeStr.substring(0, timeStr.length() - 1);
-                    if (!minOnly.contains("+")) {
+
+                if (isHalfTime) {
+                    timeStr = "45:00";
+                } else if (isFullTime) {
+                    timeStr = "90:00";
+                } else if (timeStr.endsWith("'")) {
+                    String minOnly = timeStr.substring(0, timeStr.length() - 1).trim();
+                    if (minOnly.contains("+")) {
+                        String[] parts = minOnly.split("\\+");
+                        try {
+                            int base = Integer.parseInt(parts[0].trim());
+                            int added = Integer.parseInt(parts[1].trim());
+                            int finalBase = (base <= 45 && isSecondHalf) ? (base + 45) : base;
+                            timeStr = String.format("%02d:00 (+%d)", finalBase, added);
+                        } catch (Exception e) {
+                            timeStr = minOnly + "'";
+                        }
+                    } else {
                         try {
                             int minVal = Integer.parseInt(minOnly);
-                            timeStr = String.format("%02d:00", minVal);
+                            int finalMin = (minVal <= 45 && isSecondHalf) ? (minVal + 45) : minVal;
+                            timeStr = String.format("%02d:00", finalMin);
                         } catch (Exception ignored) {}
                     }
+                } else {
+                    try {
+                        int minVal = Integer.parseInt(timeStr.replaceAll("\\D", ""));
+                        int finalMin = (minVal <= 45 && isSecondHalf) ? (minVal + 45) : minVal;
+                        timeStr = String.format("%02d:00", finalMin);
+                    } catch (Exception ignored) {}
                 }
 
                 // Geometria do Scorebug estilo Premier League
@@ -608,7 +622,7 @@ public class InMatchHudManager {
                 if (bugW > 416) bugW = 416;
                 int bugH = 38;
                 int bugX = (w - bugW) / 2;
-                int bugY = 12;
+                int bugY = 16; // Centralização nobre no card de 96px de altura
 
                 int midX = bugX + bugW / 2;
 
@@ -778,33 +792,13 @@ public class InMatchHudManager {
 
                 Color plPurple = new Color(56, 0, 60); // Roxo Premier League (#38003c)
 
-                // 7. Card Superior de Período (1T ou 2T) no mesmo molde do card da minutagem
-                int topTabW = 76;
-                int topTabH = 17;
-                int topTabX = midX - topTabW / 2;
-                int topTabY = bugY - topTabH;
+                // 7. Card do Tempo: RETO nas laterais (sem caimento!) com cantos inferiores arredondados (SEM LINHA BRANCA!)
+                // Exibe minutagem contínua no padrão broadcast oficial (0 a 45 no 1T, 45 a 90 no 2T)
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 13));
+                FontMetrics fmT = g2.getFontMetrics();
+                int tw = fmT.stringWidth(timeStr);
 
-                GeneralPath pTopTab = new GeneralPath();
-                pTopTab.moveTo(topTabX, bugY); // Base reta rente à barra
-                pTopTab.lineTo(topTabX + topTabW, bugY);
-                pTopTab.lineTo(topTabX + topTabW, topTabY + 6); // Lateral reta (sem caimento!)
-                pTopTab.quadTo(topTabX + topTabW, topTabY, topTabX + topTabW - 6, topTabY); // Canto superior direito arredondado
-                pTopTab.lineTo(topTabX + 6, topTabY);
-                pTopTab.quadTo(topTabX, topTabY, topTabX, topTabY + 6); // Canto superior esquerdo arredondado
-                pTopTab.closePath();
-
-                g2.setColor(plPurple);
-                g2.fill(pTopTab);
-                // Sem linha branca em volta do card de período!
-
-                g2.setColor(Color.WHITE);
-                g2.setFont(new Font("Segoe UI", Font.BOLD, 11));
-                FontMetrics fmP = g2.getFontMetrics();
-                int pw = fmP.stringWidth(periodStr);
-                g2.drawString(periodStr, midX - pw / 2, topTabY + (topTabH - fmP.getHeight()) / 2 + fmP.getAscent() + 1);
-
-                // 8. Card do Tempo: RETO nas laterais (sem caimento!) com cantos inferiores arredondados (SEM LINHA BRANCA!)
-                int tabW = 88;
+                int tabW = Math.max(88, tw + 24);
                 int tabH = 20;
                 int tabX = midX - tabW / 2;
                 int tabY = bugY + bugH;
@@ -823,9 +817,6 @@ public class InMatchHudManager {
                 // SEM LINHA BRANCA EM VOLTA DO CARD DE MINUTAGEM!
 
                 g2.setColor(Color.WHITE);
-                g2.setFont(new Font("Segoe UI", Font.BOLD, 13));
-                FontMetrics fmT = g2.getFontMetrics();
-                int tw = fmT.stringWidth(timeStr);
                 g2.drawString(timeStr, midX - tw / 2, tabY + (tabH - fmT.getHeight()) / 2 + fmT.getAscent());
 
                 // 9. Informações de Estádio e Torcedores abaixo

@@ -620,7 +620,7 @@ public class InMatchHudManager {
                 // Geometria do Scorebug estilo Premier League
                 int bugW = w - 24;
                 if (bugW > 416) bugW = 416;
-                int bugH = 38;
+                int bugH = 34; // Barra base
                 int bugX = (w - bugW) / 2;
                 int bugY = 16; // Centralização nobre no card de 96px de altura
 
@@ -630,7 +630,6 @@ public class InMatchHudManager {
                 Color boltColH = getVibrantAccent(colH_prim, colH_sec);
                 Color boltColA = getVibrantAccent(colA_prim, colA_sec);
 
-                // 1. Fundo Central Branco do Placar (com protrusão de 3px no topo)
                 int boltW = 14;
                 int halfScoreSpan = 50;
 
@@ -638,7 +637,9 @@ public class InMatchHudManager {
                 int sH = midX - halfScoreSpan;
                 int sA = midX + halfScoreSpan;
 
-                // 1. Fundo do Bloco Central Branco do Placar (100% rente e milimetricamente centrado em midX)
+                Color plPurple = new Color(56, 0, 60); // Roxo Premier League (#38003C)
+
+                // 1. Fundo do Bloco Central Roxo (#38003C) do Placar (milimetricamente centrado em midX)
                 GeneralPath pathScore = new GeneralPath();
                 pathScore.moveTo(sH - 5, bugY);
                 pathScore.lineTo(sA - 5, bugY);
@@ -650,7 +651,7 @@ public class InMatchHudManager {
                 pathScore.lineTo(sH + 7, bugY + bugH / 2);
                 pathScore.closePath();
 
-                g2.setColor(Color.WHITE);
+                g2.setColor(plPurple);
                 g2.fill(pathScore);
 
                 // 2. Traçado do Raio Mandante com DEGRADÊ de fora para dentro (secundária -> primária)
@@ -774,31 +775,31 @@ public class InMatchHudManager {
                 int textAX = (awayEndX - 36) - aNameW - 4;
                 g2.drawString(upperNameA, textAX, bugY + (bugH - fmA.getHeight()) / 2 + fmA.getAscent());
 
-                // 6. Placar Central: Números de gols e traço separador "-" milimetricamente centralizados em midX
-                g2.setFont(new Font("Segoe UI", Font.BOLD, 22));
+                // 6. Placar Central: Números de gols GIGANTES em BRANCO passando levemente para fora em cima e embaixo
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 24));
                 FontMetrics fmDash = g2.getFontMetrics();
                 int dashW = fmDash.stringWidth("-");
                 int dashX = midX - dashW / 2;
                 int dashY = bugY + (bugH - fmDash.getHeight()) / 2 + fmDash.getAscent() - 1;
-                g2.setColor(new Color(15, 23, 42));
+                g2.setColor(Color.WHITE);
                 g2.drawString("-", dashX, dashY);
 
-                g2.setFont(new Font("Segoe UI", Font.BOLD, 32));
+                // Fonte maior (42pt Bold) ultrapassando suavemente a barra em cima e embaixo
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 42));
                 FontMetrics fmScore = g2.getFontMetrics();
                 int scoreHW = fmScore.stringWidth(scoreH);
                 int scoreAW = fmScore.stringWidth(scoreA);
-                int scoreNumY = bugY + (bugH - fmScore.getHeight()) / 2 + fmScore.getAscent() + 1;
+                int scoreNumY = bugY + (bugH - fmScore.getHeight()) / 2 + fmScore.getAscent() + 2;
 
-                int scoreSpacing = 11; // Espaçamento simétrico a partir do hífen central
+                int scoreSpacing = 10; // Espaçamento simétrico a partir do hífen central
                 int scoreHX = dashX - scoreSpacing - scoreHW;
                 int scoreAX = dashX + dashW + scoreSpacing;
 
+                g2.setColor(Color.WHITE);
                 g2.drawString(scoreH, scoreHX, scoreNumY);
                 g2.drawString(scoreA, scoreAX, scoreNumY);
 
-                Color plPurple = new Color(56, 0, 60); // Roxo Premier League (#38003c)
-
-                // 7. Card do Tempo: RETO nas laterais (sem caimento!) com cantos inferiores arredondados (SEM LINHA BRANCA!)
+                // 7. Card do Tempo: Deslocado LEVEMENTE para baixo (gap de 6px) para não encostar nos números
                 // Exibe minutagem contínua no padrão broadcast oficial (0 a 45 no 1T, 45 a 90 no 2T)
                 g2.setFont(new Font("Segoe UI", Font.BOLD, 13));
                 FontMetrics fmT = g2.getFontMetrics();
@@ -807,15 +808,19 @@ public class InMatchHudManager {
                 int tabW = Math.max(88, tw + 24);
                 int tabH = 20;
                 int tabX = midX - tabW / 2;
-                int tabY = bugY + bugH;
+                int tabGap = 6;
+                int tabY = bugY + bugH + tabGap;
 
                 GeneralPath pathTab = new GeneralPath();
-                pathTab.moveTo(tabX, tabY);
-                pathTab.lineTo(tabX + tabW, tabY); // Topo reto
-                pathTab.lineTo(tabX + tabW, tabY + tabH - 6); // Lateral reta (sem caimento!)
-                pathTab.quadTo(tabX + tabW, tabY + tabH, tabX + tabW - 6, tabY + tabH); // Canto inferior direito arredondado
+                pathTab.moveTo(tabX + 6, tabY);
+                pathTab.lineTo(tabX + tabW - 6, tabY);
+                pathTab.quadTo(tabX + tabW, tabY, tabX + tabW, tabY + 6);
+                pathTab.lineTo(tabX + tabW, tabY + tabH - 6);
+                pathTab.quadTo(tabX + tabW, tabY + tabH, tabX + tabW - 6, tabY + tabH);
                 pathTab.lineTo(tabX + 6, tabY + tabH);
-                pathTab.quadTo(tabX, tabY + tabH, tabX, tabY + tabH - 6); // Canto inferior esquerdo arredondado
+                pathTab.quadTo(tabX, tabY + tabH, tabX, tabY + tabH - 6);
+                pathTab.lineTo(tabX, tabY + 6);
+                pathTab.quadTo(tabX, tabY, tabX + 6, tabY);
                 pathTab.closePath();
 
                 g2.setColor(plPurple);

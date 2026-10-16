@@ -631,21 +631,23 @@ public class InMatchHudManager {
                 Color boltColA = getVibrantAccent(colA_prim, colA_sec);
 
                 // 1. Fundo Central Branco do Placar (com protrusão de 3px no topo)
-                int boltW = 15; // Raio proporcional, mais nítido e com espaço nobre para os clubes
-                int halfScoreSpan = 52;
-                int cutA = midX + halfScoreSpan - 6;
-                int cutH = midX - halfScoreSpan - 6 - boltW;
+                int boltW = 14;
+                int halfScoreSpan = 50;
 
-                // 1. Fundo do Bloco Central Branco do Placar (100% rente a bugY e bugY + bugH, sem dentes ou degraus)
+                // Seams simétricos em torno de midX
+                int sH = midX - halfScoreSpan;
+                int sA = midX + halfScoreSpan;
+
+                // 1. Fundo do Bloco Central Branco do Placar (100% rente e milimetricamente centrado em midX)
                 GeneralPath pathScore = new GeneralPath();
-                pathScore.moveTo(cutH + 4 + boltW, bugY);
-                pathScore.lineTo(cutA + 4, bugY);
-                pathScore.lineTo(cutA + 16, bugY + bugH / 2);
-                pathScore.lineTo(cutA + 5, bugY + bugH / 2 + 2);
-                pathScore.lineTo(cutA + 14, bugY + bugH);
-                pathScore.lineTo(cutH + 14 + boltW, bugY + bugH);
-                pathScore.lineTo(cutH + 5 + boltW, bugY + bugH / 2 + 2);
-                pathScore.lineTo(cutH + 16 + boltW, bugY + bugH / 2);
+                pathScore.moveTo(sH - 5, bugY);
+                pathScore.lineTo(sA - 5, bugY);
+                pathScore.lineTo(sA + 7, bugY + bugH / 2);
+                pathScore.lineTo(sA - 4, bugY + bugH / 2 + 2);
+                pathScore.lineTo(sA + 5, bugY + bugH);
+                pathScore.lineTo(sH + 5, bugY + bugH);
+                pathScore.lineTo(sH - 4, bugY + bugH / 2 + 2);
+                pathScore.lineTo(sH + 7, bugY + bugH / 2);
                 pathScore.closePath();
 
                 g2.setColor(Color.WHITE);
@@ -653,25 +655,25 @@ public class InMatchHudManager {
 
                 // 2. Traçado do Raio Mandante com DEGRADÊ de fora para dentro (secundária -> primária)
                 GeneralPath boltH = new GeneralPath();
-                boltH.moveTo(cutH + 4, bugY);
-                boltH.lineTo(cutH + 16, bugY + bugH / 2);
-                boltH.lineTo(cutH + 5, bugY + bugH / 2 + 2);
-                boltH.lineTo(cutH + 14, bugY + bugH);
-                boltH.lineTo(cutH + 14 + boltW, bugY + bugH);
-                boltH.lineTo(cutH + 5 + boltW, bugY + bugH / 2 + 2);
-                boltH.lineTo(cutH + 16 + boltW, bugY + bugH / 2);
-                boltH.lineTo(cutH + 4 + boltW, bugY);
+                boltH.moveTo(sH - 5 - boltW, bugY);
+                boltH.lineTo(sH + 7 - boltW, bugY + bugH / 2);
+                boltH.lineTo(sH - 4 - boltW, bugY + bugH / 2 + 2);
+                boltH.lineTo(sH + 5 - boltW, bugY + bugH);
+                boltH.lineTo(sH + 5, bugY + bugH);
+                boltH.lineTo(sH - 4, bugY + bugH / 2 + 2);
+                boltH.lineTo(sH + 7, bugY + bugH / 2);
+                boltH.lineTo(sH - 5, bugY);
                 boltH.closePath();
 
-                GradientPaint gpBoltH = new GradientPaint(cutH + 4, bugY, boltColH, cutH + 16 + boltW, bugY, colH_prim);
+                GradientPaint gpBoltH = new GradientPaint(sH - 5 - boltW, bugY, boltColH, sH + 7, bugY, colH_prim);
 
                 // Bloco Mandante: Cantos SUPERIORES arredondados, INFERIORES RETOS (90°)
                 GeneralPath pathH = new GeneralPath();
                 pathH.moveTo(bugX + 7, bugY);
-                pathH.lineTo(cutH + 4, bugY);
-                pathH.lineTo(cutH + 16, bugY + bugH / 2);
-                pathH.lineTo(cutH + 5, bugY + bugH / 2 + 2);
-                pathH.lineTo(cutH + 14, bugY + bugH);
+                pathH.lineTo(sH - 5 - boltW, bugY);
+                pathH.lineTo(sH + 7 - boltW, bugY + bugH / 2);
+                pathH.lineTo(sH - 4 - boltW, bugY + bugH / 2 + 2);
+                pathH.lineTo(sH + 5 - boltW, bugY + bugH);
                 pathH.lineTo(bugX, bugY + bugH); // Canto inferior reto!
                 pathH.lineTo(bugX, bugY + 7);
                 pathH.quadTo(bugX, bugY, bugX + 7, bugY); // Canto superior arredondado!
@@ -690,28 +692,28 @@ public class InMatchHudManager {
                 int awayEndX = bugX + bugW;
 
                 GeneralPath boltA = new GeneralPath();
-                boltA.moveTo(cutA + 4, bugY);
-                boltA.lineTo(cutA + 16, bugY + bugH / 2);
-                boltA.lineTo(cutA + 5, bugY + bugH / 2 + 2);
-                boltA.lineTo(cutA + 14, bugY + bugH);
-                boltA.lineTo(cutA + 14 + boltW, bugY + bugH);
-                boltA.lineTo(cutA + 5 + boltW, bugY + bugH / 2 + 2);
-                boltA.lineTo(cutA + 16 + boltW, bugY + bugH / 2);
-                boltA.lineTo(cutA + 4 + boltW, bugY);
+                boltA.moveTo(sA - 5, bugY);
+                boltA.lineTo(sA + 7, bugY + bugH / 2);
+                boltA.lineTo(sA - 4, bugY + bugH / 2 + 2);
+                boltA.lineTo(sA + 5, bugY + bugH);
+                boltA.lineTo(sA + 5 + boltW, bugY + bugH);
+                boltA.lineTo(sA - 4 + boltW, bugY + bugH / 2 + 2);
+                boltA.lineTo(sA + 7 + boltW, bugY + bugH / 2);
+                boltA.lineTo(sA - 5 + boltW, bugY);
                 boltA.closePath();
 
                 Color awayEdgeCol = isNearWhite(colA_prim) ? new Color(203, 213, 225) : colA_prim;
-                GradientPaint gpBoltA = new GradientPaint(cutA + 16 + boltW, bugY, boltColA, cutA + 4, bugY, awayEdgeCol);
+                GradientPaint gpBoltA = new GradientPaint(sA + 7 + boltW, bugY, boltColA, sA - 5, bugY, awayEdgeCol);
 
                 // Bloco Visitante: Cantos SUPERIORES arredondados, INFERIORES RETOS (90°)
                 GeneralPath pathA = new GeneralPath();
-                pathA.moveTo(cutA + 4 + boltW, bugY);
+                pathA.moveTo(sA - 5 + boltW, bugY);
                 pathA.lineTo(awayEndX - 7, bugY);
                 pathA.quadTo(awayEndX, bugY, awayEndX, bugY + 7); // Canto superior arredondado!
                 pathA.lineTo(awayEndX, bugY + bugH); // Canto inferior reto!
-                pathA.lineTo(cutA + 14 + boltW, bugY + bugH);
-                pathA.lineTo(cutA + 5 + boltW, bugY + bugH / 2 + 2);
-                pathA.lineTo(cutA + 16 + boltW, bugY + bugH / 2);
+                pathA.lineTo(sA + 5 + boltW, bugY + bugH);
+                pathA.lineTo(sA - 4 + boltW, bugY + bugH / 2 + 2);
+                pathA.lineTo(sA + 7 + boltW, bugY + bugH / 2);
                 pathA.closePath();
 
                 Color drawColA = isNearWhite(colA_prim) ? new Color(248, 250, 252) : colA_prim;
@@ -738,7 +740,7 @@ public class InMatchHudManager {
                 }
 
                 Color txtColH = isLightColor(colH_prim) ? new Color(15, 23, 42) : Color.WHITE;
-                int maxNameW = (cutH + 4) - (bugX + 36) - 4;
+                int maxNameW = (sH - 5 - boltW) - (bugX + 36) - 4;
                 int fontSizeH = 15;
                 Font fontH = new Font("Segoe UI", Font.BOLD, fontSizeH);
                 while (fontSizeH > 9 && g2.getFontMetrics(fontH).stringWidth(upperNameH) > maxNameW) {
@@ -758,7 +760,7 @@ public class InMatchHudManager {
                 }
 
                 Color txtColA = isLightColor(drawColA) ? new Color(15, 23, 42) : Color.WHITE;
-                int maxNameAW = (awayEndX - 36) - (cutA + 16 + boltW) - 4;
+                int maxNameAW = (awayEndX - 36) - (sA + 7 + boltW) - 4;
                 int fontSizeA = 15;
                 Font fontA = new Font("Segoe UI", Font.BOLD, fontSizeA);
                 while (fontSizeA > 9 && g2.getFontMetrics(fontA).stringWidth(upperNameA) > maxNameAW) {
@@ -772,23 +774,27 @@ public class InMatchHudManager {
                 int textAX = (awayEndX - 36) - aNameW - 4;
                 g2.drawString(upperNameA, textAX, bugY + (bugH - fmA.getHeight()) / 2 + fmA.getAscent());
 
-                // 6. Placar Central: Números de gols GIGANTES (34pt Bold) padrão broadcast com traço "-" no centro
-                g2.setColor(new Color(15, 23, 42));
-                g2.setFont(new Font("Segoe UI", Font.BOLD, 32));
-                FontMetrics fmScore = g2.getFontMetrics();
-
-                int scoreHW = fmScore.stringWidth(scoreH);
-                int scoreAW = fmScore.stringWidth(scoreA);
-
-                int scoreNumY = bugY + (bugH - fmScore.getHeight()) / 2 + fmScore.getAscent() + 1;
-                g2.drawString(scoreH, midX - 25 - (scoreHW / 2), scoreNumY);
-                g2.drawString(scoreA, midX + 25 - (scoreAW / 2), scoreNumY);
-
-                // Traço "-" separador no centro
+                // 6. Placar Central: Números de gols e traço separador "-" milimetricamente centralizados em midX
                 g2.setFont(new Font("Segoe UI", Font.BOLD, 22));
                 FontMetrics fmDash = g2.getFontMetrics();
                 int dashW = fmDash.stringWidth("-");
-                g2.drawString("-", midX - (dashW / 2), bugY + (bugH - fmDash.getHeight()) / 2 + fmDash.getAscent());
+                int dashX = midX - dashW / 2;
+                int dashY = bugY + (bugH - fmDash.getHeight()) / 2 + fmDash.getAscent() - 1;
+                g2.setColor(new Color(15, 23, 42));
+                g2.drawString("-", dashX, dashY);
+
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 32));
+                FontMetrics fmScore = g2.getFontMetrics();
+                int scoreHW = fmScore.stringWidth(scoreH);
+                int scoreAW = fmScore.stringWidth(scoreA);
+                int scoreNumY = bugY + (bugH - fmScore.getHeight()) / 2 + fmScore.getAscent() + 1;
+
+                int scoreSpacing = 11; // Espaçamento simétrico a partir do hífen central
+                int scoreHX = dashX - scoreSpacing - scoreHW;
+                int scoreAX = dashX + dashW + scoreSpacing;
+
+                g2.drawString(scoreH, scoreHX, scoreNumY);
+                g2.drawString(scoreA, scoreAX, scoreNumY);
 
                 Color plPurple = new Color(56, 0, 60); // Roxo Premier League (#38003c)
 

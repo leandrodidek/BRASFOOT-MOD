@@ -234,34 +234,7 @@ public class EaFcUiHelper {
         }
 
         // ==========================================================
-        // LINHA 1: BARRA DE ENERGIA ARREDONDADA COM BRILHO (CENTRALIZADA)
-        // ==========================================================
-        int barW = 48;
-        int barH = 3;
-        int barX = cx - (barW / 2);
-        int barY = 0;
-
-        g.setColor(new Color(15, 23, 42, 240));
-        g.fillRoundRect(barX, barY, barW, barH, 2, 2);
-
-        Color staminaColor;
-        if (energia >= 70) {
-            staminaColor = new Color(34, 197, 94);   // Verde Elétrico (#22c55e)
-        } else if (energia >= 45) {
-            staminaColor = new Color(245, 158, 11);  // Âmbar (#f59e0b)
-        } else {
-            staminaColor = new Color(239, 68, 68);   // Vermelho Carmesim (#ef4444)
-        }
-
-        int fillW = (int) Math.round((energia / 100.0) * barW);
-        if (fillW > barW) fillW = barW;
-        if (fillW > 0) {
-            g.setColor(staminaColor);
-            g.fillRoundRect(barX, barY, fillW, barH, 2, 2);
-        }
-
-        // ==========================================================
-        // LINHA 2: PILL MODERNO DE OVR & POSIÇÃO (VERDANA LEGÍVEL)
+        // LINHA 1: PILL MODERNO DE OVR & POSIÇÃO (VERDANA LEGÍVEL)
         // ==========================================================
         Font fontChip = new Font("Verdana", Font.BOLD, 9);
         Font fontForca = new Font("Verdana", Font.BOLD, 10);
@@ -281,7 +254,7 @@ public class EaFcUiHelper {
         int pillW = posBadgeW + gap + forcaW + rightPad;
         int pillH = 14;
         int pillX = cx - (pillW / 2);
-        int pillY = barY + barH + 2;
+        int pillY = 1;
 
         // Fundo escuro do Pill com cantos arredondados e borda sutil
         g.setColor(new Color(15, 23, 42, 245));
@@ -312,6 +285,33 @@ public class EaFcUiHelper {
         g.drawString(forcaStr, ovrX, ovrY);
 
         // ==========================================================
+        // LINHA 2: BARRA DE ENERGIA ARREDONDADA COM BRILHO (ABAIXO DO CARD DE POSIÇÃO)
+        // ==========================================================
+        int barW = 48;
+        int barH = 3;
+        int barX = cx - (barW / 2);
+        int barY = pillY + pillH + 2;
+
+        g.setColor(new Color(15, 23, 42, 240));
+        g.fillRoundRect(barX, barY, barW, barH, 2, 2);
+
+        Color staminaColor;
+        if (energia >= 70) {
+            staminaColor = new Color(34, 197, 94);   // Verde Elétrico (#22c55e)
+        } else if (energia >= 45) {
+            staminaColor = new Color(245, 158, 11);  // Âmbar (#f59e0b)
+        } else {
+            staminaColor = new Color(239, 68, 68);   // Vermelho Carmesim (#ef4444)
+        }
+
+        int fillW = (int) Math.round((energia / 100.0) * barW);
+        if (fillW > barW) fillW = barW;
+        if (fillW > 0) {
+            g.setColor(staminaColor);
+            g.fillRoundRect(barX, barY, fillW, barH, 2, 2);
+        }
+
+        // ==========================================================
         // LINHA 3: CARD ARREDONDADO DO NOME (CENTRALIZADO COM SOMBRA)
         // ==========================================================
         Font fontNome = new Font("Verdana", Font.BOLD, 10);
@@ -321,7 +321,7 @@ public class EaFcUiHelper {
         int cardNameW = Math.max(nameW + 12, 54);
         int cardNameH = 14;
         int cardNameX = cx - (cardNameW / 2);
-        int cardNameY = pillY + pillH + 2;
+        int cardNameY = barY + barH + 2;
 
         g.setColor(new Color(15, 23, 42, 245));
         g.fillRoundRect(cardNameX, cardNameY, cardNameW, cardNameH, 4, 4);

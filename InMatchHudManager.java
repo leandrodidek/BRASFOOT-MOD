@@ -272,13 +272,13 @@ public class InMatchHudManager {
             // 6. HUB ANALÍTICO CENTRAL (x: 650, w: 440)
             // =========================================================
 
-            // 6.1 Placar Broadcast TV Estilo Real (y: 10, h: 96)
+            // 6.1 Placar Broadcast TV Estilo Real (y: 8, h: 102)
             if (scoreboardCard == null) {
                 scoreboardCard = buildScoreboardCard(cDObj, match, scoreHome, scoreAway, matchTime, matchPeriod, stadiumLbl, attLbl);
             } else {
                 updateScoreboardValues(match, scoreHome, scoreAway, matchTime, matchPeriod, stadiumLbl, attLbl);
             }
-            scoreboardCard.setBounds(650, 10, 440, 96);
+            scoreboardCard.setBounds(650, 8, 440, 102);
             if (!isChildOf(root, scoreboardCard)) {
                 root.add(scoreboardCard);
             }
@@ -622,7 +622,7 @@ public class InMatchHudManager {
                 if (bugW > 416) bugW = 416;
                 int bugH = 34; // Barra base
                 int bugX = (w - bugW) / 2;
-                int bugY = 16; // Centralização nobre no card de 96px de altura
+                int bugY = 12; // Centralização nobre no card expandido
 
                 int midX = bugX + bugW / 2;
 
@@ -639,13 +639,13 @@ public class InMatchHudManager {
 
                 Color plPurple = new Color(56, 0, 60); // Roxo Premier League (#38003C)
 
-                // 1. Fundo do Bloco Central Roxo (#38003C) do Placar (milimetricamente centrado em midX)
+                // 1. Fundo do Bloco Central Roxo (#38003C) 100% BILATERALMENTE SIMÉTRICO em torno de midX
                 GeneralPath pathScore = new GeneralPath();
                 pathScore.moveTo(sH - 5, bugY);
-                pathScore.lineTo(sA - 5, bugY);
-                pathScore.lineTo(sA + 7, bugY + bugH / 2);
-                pathScore.lineTo(sA - 4, bugY + bugH / 2 + 2);
-                pathScore.lineTo(sA + 5, bugY + bugH);
+                pathScore.lineTo(sA + 5, bugY);
+                pathScore.lineTo(sA - 7, bugY + bugH / 2);
+                pathScore.lineTo(sA + 4, bugY + bugH / 2 + 2);
+                pathScore.lineTo(sA - 5, bugY + bugH);
                 pathScore.lineTo(sH + 5, bugY + bugH);
                 pathScore.lineTo(sH - 4, bugY + bugH / 2 + 2);
                 pathScore.lineTo(sH + 7, bugY + bugH / 2);
@@ -654,7 +654,7 @@ public class InMatchHudManager {
                 g2.setColor(plPurple);
                 g2.fill(pathScore);
 
-                // 2. Traçado do Raio Mandante com DEGRADÊ de fora para dentro (secundária -> primária)
+                // 2. Traçado do Raio Mandante com DEGRADÊ de fora para dentro (apontando > para o centro)
                 GeneralPath boltH = new GeneralPath();
                 boltH.moveTo(sH - 5 - boltW, bugY);
                 boltH.lineTo(sH + 7 - boltW, bugY + bugH / 2);
@@ -689,32 +689,32 @@ public class InMatchHudManager {
                 g2.setColor(new Color(255, 255, 255, 50));
                 g2.draw(pathH);
 
-                // 3. Traçado do Raio Visitante com DEGRADÊ de fora para dentro (secundária -> primária)
+                // 3. Traçado do Raio Visitante ESPELHADO (apontando < para o centro, 100% simétrico!)
                 int awayEndX = bugX + bugW;
 
                 GeneralPath boltA = new GeneralPath();
-                boltA.moveTo(sA - 5, bugY);
-                boltA.lineTo(sA + 7, bugY + bugH / 2);
-                boltA.lineTo(sA - 4, bugY + bugH / 2 + 2);
-                boltA.lineTo(sA + 5, bugY + bugH);
-                boltA.lineTo(sA + 5 + boltW, bugY + bugH);
-                boltA.lineTo(sA - 4 + boltW, bugY + bugH / 2 + 2);
-                boltA.lineTo(sA + 7 + boltW, bugY + bugH / 2);
-                boltA.lineTo(sA - 5 + boltW, bugY);
+                boltA.moveTo(sA + 5, bugY);
+                boltA.lineTo(sA - 7, bugY + bugH / 2);
+                boltA.lineTo(sA + 4, bugY + bugH / 2 + 2);
+                boltA.lineTo(sA - 5, bugY + bugH);
+                boltA.lineTo(sA - 5 + boltW, bugY + bugH);
+                boltA.lineTo(sA + 4 + boltW, bugY + bugH / 2 + 2);
+                boltA.lineTo(sA - 7 + boltW, bugY + bugH / 2);
+                boltA.lineTo(sA + 5 + boltW, bugY);
                 boltA.closePath();
 
                 Color awayEdgeCol = isNearWhite(colA_prim) ? new Color(203, 213, 225) : colA_prim;
-                GradientPaint gpBoltA = new GradientPaint(sA + 7 + boltW, bugY, boltColA, sA - 5, bugY, awayEdgeCol);
+                GradientPaint gpBoltA = new GradientPaint(sA - 5 + boltW, bugY, boltColA, sA - 7, bugY, awayEdgeCol);
 
                 // Bloco Visitante: Cantos SUPERIORES arredondados, INFERIORES RETOS (90°)
                 GeneralPath pathA = new GeneralPath();
-                pathA.moveTo(sA - 5 + boltW, bugY);
+                pathA.moveTo(sA + 5 + boltW, bugY);
                 pathA.lineTo(awayEndX - 7, bugY);
                 pathA.quadTo(awayEndX, bugY, awayEndX, bugY + 7); // Canto superior arredondado!
                 pathA.lineTo(awayEndX, bugY + bugH); // Canto inferior reto!
-                pathA.lineTo(sA + 5 + boltW, bugY + bugH);
-                pathA.lineTo(sA - 4 + boltW, bugY + bugH / 2 + 2);
-                pathA.lineTo(sA + 7 + boltW, bugY + bugH / 2);
+                pathA.lineTo(sA - 5 + boltW, bugY + bugH);
+                pathA.lineTo(sA + 4 + boltW, bugY + bugH / 2 + 2);
+                pathA.lineTo(sA - 7 + boltW, bugY + bugH / 2);
                 pathA.closePath();
 
                 Color drawColA = isNearWhite(colA_prim) ? new Color(248, 250, 252) : colA_prim;
@@ -761,7 +761,7 @@ public class InMatchHudManager {
                 }
 
                 Color txtColA = isLightColor(drawColA) ? new Color(15, 23, 42) : Color.WHITE;
-                int maxNameAW = (awayEndX - 36) - (sA + 7 + boltW) - 4;
+                int maxNameAW = (awayEndX - 36) - (sA - 5 + boltW) - 4;
                 int fontSizeA = 15;
                 Font fontA = new Font("Segoe UI", Font.BOLD, fontSizeA);
                 while (fontSizeA > 9 && g2.getFontMetrics(fontA).stringWidth(upperNameA) > maxNameAW) {
@@ -775,7 +775,7 @@ public class InMatchHudManager {
                 int textAX = (awayEndX - 36) - aNameW - 4;
                 g2.drawString(upperNameA, textAX, bugY + (bugH - fmA.getHeight()) / 2 + fmA.getAscent());
 
-                // 6. Placar Central: Números de gols GIGANTES em BRANCO passando levemente para fora em cima e embaixo
+                // 6. Placar Central: Números de gols GIGANTES em BRANCO 100% centralizados
                 g2.setFont(new Font("Segoe UI", Font.BOLD, 24));
                 FontMetrics fmDash = g2.getFontMetrics();
                 int dashW = fmDash.stringWidth("-");
@@ -799,28 +799,25 @@ public class InMatchHudManager {
                 g2.drawString(scoreH, scoreHX, scoreNumY);
                 g2.drawString(scoreA, scoreAX, scoreNumY);
 
-                // 7. Card do Tempo: Deslocado LEVEMENTE para baixo (gap de 6px) para não encostar nos números
+                // 7. Card do Tempo: 100% GRUDADO no card principal (estendido no topo até encostar)
                 // Exibe minutagem contínua no padrão broadcast oficial (0 a 45 no 1T, 45 a 90 no 2T)
                 g2.setFont(new Font("Segoe UI", Font.BOLD, 13));
                 FontMetrics fmT = g2.getFontMetrics();
                 int tw = fmT.stringWidth(timeStr);
 
                 int tabW = Math.max(88, tw + 24);
-                int tabH = 20;
+                int tabH = 22;
                 int tabX = midX - tabW / 2;
-                int tabGap = 6;
-                int tabY = bugY + bugH + tabGap;
+                int tabY = bugY + bugH; // Conectado diretamente rente à barra principal!
 
                 GeneralPath pathTab = new GeneralPath();
-                pathTab.moveTo(tabX + 6, tabY);
-                pathTab.lineTo(tabX + tabW - 6, tabY);
-                pathTab.quadTo(tabX + tabW, tabY, tabX + tabW, tabY + 6);
+                pathTab.moveTo(tabX, tabY); // Topo reto encostado no card principal!
+                pathTab.lineTo(tabX + tabW, tabY);
                 pathTab.lineTo(tabX + tabW, tabY + tabH - 6);
                 pathTab.quadTo(tabX + tabW, tabY + tabH, tabX + tabW - 6, tabY + tabH);
                 pathTab.lineTo(tabX + 6, tabY + tabH);
                 pathTab.quadTo(tabX, tabY + tabH, tabX, tabY + tabH - 6);
-                pathTab.lineTo(tabX, tabY + 6);
-                pathTab.quadTo(tabX, tabY, tabX + 6, tabY);
+                pathTab.lineTo(tabX, tabY);
                 pathTab.closePath();
 
                 g2.setColor(plPurple);
@@ -828,9 +825,9 @@ public class InMatchHudManager {
                 // SEM LINHA BRANCA EM VOLTA DO CARD DE MINUTAGEM!
 
                 g2.setColor(Color.WHITE);
-                g2.drawString(timeStr, midX - tw / 2, tabY + (tabH - fmT.getHeight()) / 2 + fmT.getAscent());
+                g2.drawString(timeStr, midX - tw / 2, tabY + (tabH - fmT.getHeight()) / 2 + fmT.getAscent() + 1);
 
-                // 9. Informações de Estádio e Torcedores abaixo
+                // 8. Informações de Estádio e Torcedores abaixo com espaçamento generoso
                 String stadText = (currentStadium != null && currentStadium.getText() != null) ? currentStadium.getText().trim() : "Estádio";
                 String attRaw = (currentAtt != null && currentAtt.getText() != null) ? currentAtt.getText().trim() : "";
                 String attFormatted = attRaw;
@@ -846,7 +843,7 @@ public class InMatchHudManager {
                 FontMetrics fmInfo = g2.getFontMetrics();
                 String infoStr = stadText + (attFormatted.isEmpty() ? "" : "   •   " + attFormatted + " torcedores");
                 int iw = fmInfo.stringWidth(infoStr);
-                g2.drawString(infoStr, (w - iw) / 2, 85);
+                g2.drawString(infoStr, (w - iw) / 2, 92);
 
                 g2.dispose();
             }

@@ -151,6 +151,137 @@ public class EaFcUiHelper {
     }
 
     /**
+     * Renderiza uma linha do banco de reservas no formato de lista vertical moderna:
+     * - Badge de posição (G, L, Z, M, A) com fundo colorido e borda acentuada
+     * - Nome do atleta (com cruz vermelha se lesionado)
+     * - Força (OVR) alinhada à direita em branco bold
+     * - Barra de energia proporcional que começa no início da badge e vai até o fim da área do nome
+     */
+    public static void drawBenchPlayerRow(Graphics2D g, best.F f2, int slot, int x, int y, int w, int h) {
+        if (f2 == null) return;
+
+        // Container da linha com cantos arredondados e fundo sutil
+        g.setColor(new Color(18, 24, 38, 160));
+        g.fillRoundRect(x, y, w, h, 6, 6);
+        g.setColor(new Color(45, 60, 88, 90));
+        g.drawRoundRect(x, y, w, h, 6, 6);
+
+        int forca = f2.fi();
+        int energia = f2.fp();
+        if (energia < 0) energia = 0;
+        if (energia > 100) energia = 100;
+
+        String posLabel = PositionPenaltyHelper.getDisplayLabel(f2, slot);
+
+        Color chipBg;
+        Color chipBorder;
+        if (posLabel.startsWith("G")) {
+            chipBg = new Color(217, 119, 6);       // Âmbar Goleiro
+            chipBorder = new Color(245, 158, 11);
+        } else if (posLabel.startsWith("L")) {
+            chipBg = new Color(2, 132, 199);        // Ciano Lateral
+            chipBorder = new Color(56, 189, 248);
+        } else if (posLabel.startsWith("Z")) {
+            chipBg = new Color(37, 99, 235);        // Azul Royal Zagueiro
+            chipBorder = new Color(96, 165, 250);
+        } else if (posLabel.startsWith("M") || posLabel.equals("VOL")) {
+            chipBg = new Color(5, 150, 105);        // Esmeralda Meio-campo
+            chipBorder = new Color(52, 211, 153);
+        } else {
+            chipBg = new Color(220, 38, 38);        // Vermelho Carmesim Atacante
+            chipBorder = new Color(248, 113, 113);
+        }
+
+        // 1. Badge da Posição oficial
+        int badgeX = x + 8;
+        int badgeY = y + 7;
+        int badgeW = 28;
+        int badgeH = 17;
+
+        g.setColor(chipBg);
+        g.fillRoundRect(badgeX, badgeY, badgeW, badgeH, 4, 4);
+        g.setColor(chipBorder);
+        g.drawRoundRect(badgeX, badgeY, badgeW, badgeH, 4, 4);
+
+        Font fontBadge = new Font("Verdana", Font.BOLD, 9);
+        g.setFont(fontBadge);
+        g.setColor(Color.WHITE);
+        FontMetrics fmB = g.getFontMetrics(fontBadge);
+        int bw = fmB.stringWidth(posLabel);
+        g.drawString(posLabel, badgeX + (badgeW - bw) / 2, badgeY + (badgeH - fmB.getHeight()) / 2 + fmB.getAscent());
+
+        // 2. Força / OVR à direita
+        Font fontOvr = new Font("Segoe UI", Font.BOLD, 14);
+        g.setFont(fontOvr);
+        FontMetrics fmO = g.getFontMetrics(fontOvr);
+        String ovrStr = String.valueOf(forca);
+        int ovrW = fmO.stringWidth(ovrStr);
+        int ovrX = x + w - ovrW - 8;
+        int ovrY = badgeY + (badgeH - fmO.getHeight()) / 2 + fmO.getAscent();
+        g.setColor(Color.WHITE);
+        g.drawString(ovrStr, ovrX, ovrY);
+
+        // 3. Nome do Jogador (com ícone de contusão se machucado)
+        boolean isInjured = false;
+        try { isInjured = f2.fP(); } catch (Throwable ignored) {}
+
+        int nameX = badgeX + badgeW + 8;
+        if (isInjured) {
+            Image icon = getInjuryIcon();
+            if (icon != null) {
+                int iconSize = 13;
+                int iconY = badgeY + (badgeH - iconSize) / 2;
+                g.drawImage(icon, nameX, iconY, iconSize, iconSize, null);
+                nameX += iconSize + 4;
+            }
+        }
+
+        Font fontName = new Font("Segoe UI", Font.BOLD, 12);
+        g.setFont(fontName);
+        FontMetrics fmN = g.getFontMetrics(fontName);
+        String nome = f2.getNome();
+        if (nome == null) nome = "";
+        String displayName = nome;
+        int maxNameW = (ovrX - 8) - nameX;
+        while (displayName.length() > 3 && fmN.stringWidth(displayName) > maxNameW) {
+            displayName = displayName.substring(0, displayName.length() - 1);
+        }
+        if (displayName.length() < nome.length()) {
+            displayName = displayName.substring(0, Math.max(1, displayName.length() - 1)) + ".";
+        }
+
+        int nameY = badgeY + (badgeH - fmN.getHeight()) / 2 + fmN.getAscent();
+        g.setColor(new Color(248, 250, 252));
+        g.drawString(displayName, nameX, nameY);
+
+        // 4. Barra de Energia (começa no início da badge até o fim da área do nome)
+        int barX = badgeX;
+        int barEndX = ovrX - 8; // Fim da área do nome
+        int barW = barEndX - barX;
+        int barH = 3;
+        int barY = badgeY + badgeH + 6;
+
+        g.setColor(new Color(15, 23, 42, 220));
+        g.fillRoundRect(barX, barY, barW, barH, 2, 2);
+
+        Color staminaColor;
+        if (energia >= 70) {
+            staminaColor = new Color(34, 197, 94);   // Verde Elétrico (#22c55e)
+        } else if (energia >= 45) {
+            staminaColor = new Color(245, 158, 11);  // Âmbar (#f59e0b)
+        } else {
+            staminaColor = new Color(239, 68, 68);   // Vermelho Carmesim (#ef4444)
+        }
+
+        int fillW = (int) Math.round((energia / 100.0) * barW);
+        if (fillW > barW) fillW = barW;
+        if (fillW > 0) {
+            g.setColor(staminaColor);
+            g.fillRoundRect(barX, barY, fillW, barH, 2, 2);
+        }
+    }
+
+    /**
      * Renderiza o cartão de jogador sob a camisa no campo, banco de reservas e elenco.
      * Estrutura visual premium inspirada no EA Sports FC (Console HUD):
      * 1. Barra de energia (stamina) arredondada com brilho (h=3px)

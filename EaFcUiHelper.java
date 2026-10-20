@@ -76,6 +76,64 @@ public class EaFcUiHelper {
         return injuryIcon;
     }
 
+    private static Image goalBallIcon = null;
+    private static Image assistBootIcon = null;
+
+    public static Image getGoalBallIcon() {
+        if (goalBallIcon == null) {
+            try {
+                java.net.URL url = EaFcUiHelper.class.getResource("/aicons/bolaouro_s3.png");
+                if (url != null) {
+                    goalBallIcon = javax.imageio.ImageIO.read(url);
+                } else {
+                    java.io.File f = new java.io.File("C:/Brasfoot22-23/projeto/aicons/bolaouro_s3.png");
+                    if (f.exists()) goalBallIcon = javax.imageio.ImageIO.read(f);
+                }
+            } catch (Throwable ignored) {}
+        }
+        return goalBallIcon;
+    }
+
+    public static Image getAssistBootIcon() {
+        if (assistBootIcon == null) {
+            try {
+                java.net.URL url = EaFcUiHelper.class.getResource("/aicons/ic_chuteira1.png");
+                if (url != null) {
+                    assistBootIcon = javax.imageio.ImageIO.read(url);
+                } else {
+                    java.io.File f = new java.io.File("C:/Brasfoot22-23/projeto/aicons/ic_chuteira1.png");
+                    if (f.exists()) assistBootIcon = javax.imageio.ImageIO.read(f);
+                }
+            } catch (Throwable ignored) {}
+        }
+        return assistBootIcon;
+    }
+
+    public static void drawSoccerBall(Graphics2D g, int x, int y, int size) {
+        Image img = getGoalBallIcon();
+        if (img != null) {
+            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g.drawImage(img, x, y, size, size, null);
+        } else {
+            g.setColor(new Color(241, 245, 249));
+            g.fillOval(x, y, size, size);
+            g.setColor(new Color(15, 23, 42));
+            g.drawOval(x, y, size, size);
+            g.fillOval(x + size / 4, y + size / 4, size / 2, size / 2);
+        }
+    }
+
+    public static void drawCleatBoot(Graphics2D g, int x, int y, int sizeW, int sizeH) {
+        Image img = getAssistBootIcon();
+        if (img != null) {
+            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g.drawImage(img, x, y, sizeW, sizeH, null);
+        } else {
+            g.setColor(new Color(56, 189, 248));
+            g.fillRoundRect(x, y + 2, sizeW - 2, sizeH - 4, 3, 3);
+        }
+    }
+
     // Mapeamento nativo dos slots do campo (0..25) para detecção resiliente de improvisação
     public static final int[] SLOT_EXPECTED_POS = {
         -1, // 0
@@ -354,6 +412,11 @@ public class EaFcUiHelper {
     public static void drawPreMatchBenchPlayerRow(Graphics2D g, best.F f2, int slot, int rx, int ry, int colW, int rowH) {
         if (f2 == null) return;
 
+        // Ativa renderização de texto e formas de altíssima nitidez
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
+        g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+
         // Container da linha com cantos arredondados e fundo sutil
         g.setColor(new Color(18, 24, 38, 215));
         g.fillRoundRect(rx, ry, colW, rowH, 6, 6);
@@ -386,15 +449,16 @@ public class EaFcUiHelper {
             chipBorder = new Color(248, 113, 113);
         }
 
-        Font fontBadge = new Font("Verdana", Font.BOLD, 9);
-        Font fontName  = new Font("Segoe UI", Font.BOLD, 11);
+        Font fontBadge = new Font("Segoe UI", Font.BOLD, 10);
+        Font fontName  = new Font("Segoe UI", Font.BOLD, 12);
         Font fontOvr   = new Font("Segoe UI", Font.BOLD, 12);
         Font fontCr    = new Font("Segoe UI", Font.BOLD, 10);
-        Font fontNota  = new Font("Segoe UI", Font.BOLD, 11);
+        Font fontStats = new Font("Segoe UI", Font.BOLD, 11);
+        Font fontNota  = new Font("Segoe UI", Font.BOLD, 12);
 
         // 1. Badge da Posição
         int badgeX = rx + 6;
-        int badgeH = 16;
+        int badgeH = 17;
         int badgeW = 24;
         int badgeY = ry + (rowH - badgeH) / 2;
 
@@ -413,7 +477,7 @@ public class EaFcUiHelper {
         boolean isInjured = false;
         try { isInjured = f2.fP(); } catch (Throwable ignored) {}
 
-        int nameX = badgeX + badgeW + 8;
+        int nameX = badgeX + badgeW + 6;
         if (isInjured) {
             Image icon = getInjuryIcon();
             if (icon != null) {
@@ -442,7 +506,7 @@ public class EaFcUiHelper {
 
         // 3. Barra de Energia (do início do badge até o fim da área do nome)
         int barX = badgeX;
-        int barEndX = nameX + maxNameW;
+        int barEndX = rx + 6 + 24 + 6 + 125; // x = rx + 161
         int barW = barEndX - barX;
         int barH = 3;
         int barY = ry + rowH - 4;
@@ -467,7 +531,7 @@ public class EaFcUiHelper {
         }
 
         // 4. Overall (Força)
-        int ovrX = nameX + maxNameW + 8;
+        int ovrX = rx + 168;
         g.setFont(fontOvr);
         FontMetrics fmO = g.getFontMetrics(fontOvr);
         String ovrStr = String.valueOf(forca);
@@ -488,50 +552,332 @@ public class EaFcUiHelper {
         g.setFont(fontCr);
         FontMetrics fmCr = g.getFontMetrics(fontCr);
 
-        int cr1X = ovrX + fmO.stringWidth(ovrStr) + 14;
+        int cr1X = rx + 196;
         int crH = 16;
         int crY = badgeY;
 
         if (!cr1.isEmpty()) {
             int c1w = fmCr.stringWidth(cr1);
-            int cr1W = c1w + 12;
+            int cr1W = Math.min(68, c1w + 10);
             g.setColor(new Color(30, 41, 59, 220));
             g.fillRoundRect(cr1X, crY, cr1W, crH, 4, 4);
             g.setColor(new Color(71, 85, 105, 150));
             g.drawRoundRect(cr1X, crY, cr1W, crH, 4, 4);
             g.setColor(new Color(226, 232, 240));
-            g.drawString(cr1, cr1X + 6, crY + (crH - fmCr.getHeight()) / 2 + fmCr.getAscent());
-            cr1X += cr1W + 6;
+
+            String dCr1 = cr1;
+            while (dCr1.length() > 2 && fmCr.stringWidth(dCr1) > cr1W - 8) {
+                dCr1 = dCr1.substring(0, dCr1.length() - 1);
+            }
+            int tx = cr1X + (cr1W - fmCr.stringWidth(dCr1)) / 2;
+            g.drawString(dCr1, tx, crY + (crH - fmCr.getHeight()) / 2 + fmCr.getAscent());
+            cr1X += cr1W + 4;
         }
 
         if (!cr2.isEmpty()) {
             int c2w = fmCr.stringWidth(cr2);
-            int cr2W = c2w + 12;
+            int cr2W = Math.min(68, c2w + 10);
             g.setColor(new Color(30, 41, 59, 220));
             g.fillRoundRect(cr1X, crY, cr2W, crH, 4, 4);
             g.setColor(new Color(71, 85, 105, 150));
             g.drawRoundRect(cr1X, crY, cr2W, crH, 4, 4);
             g.setColor(new Color(226, 232, 240));
-            g.drawString(cr2, cr1X + 6, crY + (crH - fmCr.getHeight()) / 2 + fmCr.getAscent());
+
+            String dCr2 = cr2;
+            while (dCr2.length() > 2 && fmCr.stringWidth(dCr2) > cr2W - 8) {
+                dCr2 = dCr2.substring(0, dCr2.length() - 1);
+            }
+            int tx = cr1X + (cr2W - fmCr.stringWidth(dCr2)) / 2;
+            g.drawString(dCr2, tx, crY + (crH - fmCr.getHeight()) / 2 + fmCr.getAscent());
         }
 
-        // 6. Nota Média ao lado
+        // 6. Gols (⚽) e Assistências (👟) - Sempre 0 se não tiver
+        int gols = 0;
+        int assists = 0;
+        try { gols = f2.gt(); } catch (Throwable ignored) {}
+        try { assists = f2.gs(); } catch (Throwable ignored) {}
+
+        g.setFont(fontStats);
+        FontMetrics fmS = g.getFontMetrics(fontStats);
+        int statY = badgeY + (badgeH - fmS.getHeight()) / 2 + fmS.getAscent();
+
+        // ⚽ Gols
+        int goalsIconX = rx + 344;
+        drawSoccerBall(g, goalsIconX, badgeY + 2, 13);
+        String golsStr = String.valueOf(gols);
+        g.setColor(gols > 0 ? new Color(250, 204, 21) : new Color(148, 163, 184));
+        g.drawString(golsStr, rx + 361, statY);
+
+        // 👟 Assistências
+        int assistsIconX = rx + 394;
+        drawCleatBoot(g, assistsIconX, badgeY + 2, 14, 13);
+        String assistsStr = String.valueOf(assists);
+        g.setColor(assists > 0 ? new Color(56, 189, 248) : new Color(148, 163, 184));
+        g.drawString(assistsStr, rx + 412, statY);
+
+        // 7. Nota Média com pill moderno
         double nota = 0.0;
         try { nota = f2.F(); } catch (Throwable ignored) {}
         String notaStr = (nota < 2.0) ? "--" : String.format(java.util.Locale.US, "%.1f", nota);
 
+        int notaPillW = 42;
+        int notaPillH = 17;
+        int notaPillX = rx + colW - notaPillW - 8;
+        int notaPillY = badgeY;
+
+        Color notaBg = (nota >= 7.0) ? new Color(34, 197, 94, 40) :
+                       (nota >= 6.0) ? new Color(245, 158, 11, 40) :
+                       (nota >= 2.0) ? new Color(239, 68, 68, 40) : new Color(51, 65, 85, 40);
+
+        Color notaBorder = (nota >= 7.0) ? new Color(34, 197, 94, 140) :
+                          (nota >= 6.0) ? new Color(245, 158, 11, 140) :
+                          (nota >= 2.0) ? new Color(239, 68, 68, 140) : new Color(71, 85, 105, 100);
+
+        Color notaText = (nota >= 7.0) ? new Color(74, 222, 128) :
+                         (nota >= 6.0) ? new Color(251, 191, 36) :
+                         (nota >= 2.0) ? new Color(248, 113, 113) : new Color(148, 163, 184);
+
+        g.setColor(notaBg);
+        g.fillRoundRect(notaPillX, notaPillY, notaPillW, notaPillH, 4, 4);
+        g.setColor(notaBorder);
+        g.drawRoundRect(notaPillX, notaPillY, notaPillW, notaPillH, 4, 4);
+
         g.setFont(fontNota);
         FontMetrics fmNota = g.getFontMetrics(fontNota);
-        int notaW = fmNota.stringWidth(notaStr);
-        int notaX = rx + colW - notaW - 8;
-        int notaY = badgeY + (badgeH - fmNota.getHeight()) / 2 + fmNota.getAscent();
+        int nw = fmNota.stringWidth(notaStr);
+        int nx = notaPillX + (notaPillW - nw) / 2;
+        int ny = notaPillY + (notaPillH - fmNota.getHeight()) / 2 + fmNota.getAscent();
 
-        Color notaColor = (nota >= 7.0) ? new Color(34, 197, 94) :
-                          (nota >= 6.0) ? new Color(245, 158, 11) :
-                          (nota >= 2.0) ? new Color(239, 68, 68) : new Color(148, 163, 184);
+        g.setColor(notaText);
+        g.drawString(notaStr, nx, ny);
+    }
 
-        g.setColor(notaColor);
-        g.drawString(notaStr, notaX, notaY);
+    /**
+     * Localiza o atleta (best.F) na lista de reservas (AA) ou disponíveis (AB) de acordo com o cursor Y.
+     */
+    public static best.F getPreMatchPlayerAt(JPanel root, boolean isBench, int y) {
+        if (root == null) return null;
+        try {
+            Field fAE = root.getClass().getDeclaredField("AE");
+            fAE.setAccessible(true);
+            ArrayList ae = (ArrayList) fAE.get(root);
+            if (ae == null) return null;
+
+            int rowStep = 27;
+            int row = y / rowStep;
+            if (isBench) {
+                int slot = 26 + row;
+                if (slot >= 26 && slot <= 36 && slot < ae.size()) {
+                    Object ao = ae.get(slot);
+                    if (ao != null) {
+                        Method mX = ao.getClass().getMethod("x");
+                        return (best.F) mX.invoke(ao);
+                    }
+                }
+            } else {
+                ArrayList availSlots = new ArrayList();
+                for (int i = 37; i < ae.size(); i++) {
+                    Object ao = ae.get(i);
+                    if (ao != null) {
+                        Method mVf = ao.getClass().getMethod("vf");
+                        if (mVf.invoke(ao) != null) {
+                            availSlots.add(Integer.valueOf(i));
+                        }
+                    }
+                }
+                int scroll = getAvailScrollIndex();
+                int targetIdx = scroll + row;
+                if (targetIdx >= 0 && targetIdx < availSlots.size()) {
+                    int slot = ((Integer) availSlots.get(targetIdx)).intValue();
+                    Object ao = ae.get(slot);
+                    if (ao != null) {
+                        Method mX = ao.getClass().getMethod("x");
+                        return (best.F) mX.invoke(ao);
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+        return null;
+    }
+
+    /**
+     * Retorna o tooltip informativo e detalhado para cada coluna do jogador na lista de pré-jogo.
+     */
+    public static String getPreMatchPlayerTooltip(best.F f2, int x) {
+        if (f2 == null) return null;
+        int gols = 0;
+        int assists = 0;
+        try { gols = f2.gt(); } catch (Throwable ignored) {}
+        try { assists = f2.gs(); } catch (Throwable ignored) {}
+        double nota = 0.0;
+        try { nota = f2.F(); } catch (Throwable ignored) {}
+        String notaStr = (nota < 2.0) ? "--" : String.format(java.util.Locale.US, "%.1f", nota);
+
+        String cr1 = "";
+        String cr2 = "";
+        try {
+            int c1Idx = f2.getCr1();
+            int c2Idx = f2.getCr2();
+            if (c1Idx >= 0 && c1Idx < FULL_CHARACTERISTICS.length) cr1 = FULL_CHARACTERISTICS[c1Idx];
+            if (c2Idx >= 0 && c2Idx < FULL_CHARACTERISTICS.length) cr2 = FULL_CHARACTERISTICS[c2Idx];
+        } catch (Throwable ignored) {}
+
+        String posName;
+        switch (f2.getPosicao()) {
+            case 0: posName = "Goleiro"; break;
+            case 1: posName = "Lateral"; break;
+            case 2: posName = "Zagueiro"; break;
+            case 3: posName = "Meio-Campo"; break;
+            case 4: posName = "Atacante"; break;
+            default: posName = "Jogador"; break;
+        }
+
+        if (x <= 34) {
+            return "<html><body style='font-family:Segoe UI;padding:4px;color:#f8fafc;background-color:#0f172a'>"
+                 + "<b>Posi\u00e7\u00e3o:</b> " + posName + "<br>"
+                 + "<span style='color:#94a3b8'>Lado: " + (f2.getLado() == 1 ? "Direito" : f2.getLado() == 2 ? "Esquerdo" : "Ambos") + "</span>"
+                 + "</body></html>";
+        } else if (x <= 162) {
+            return "<html><body style='font-family:Segoe UI;padding:4px;color:#f8fafc;background-color:#0f172a'>"
+                 + "<b style='color:#38bdf8'>" + f2.getNome() + "</b><br>"
+                 + "Idade: " + f2.getIdade() + " anos<br>"
+                 + "Condi\u00e7\u00e3o f\u00edsica / Energia: <b>" + f2.fp() + "%</b>"
+                 + (f2.fP() ? "<br><span style='color:#ef4444'><b>Atleta Contundido</b></span>" : "")
+                 + "</body></html>";
+        } else if (x <= 192) {
+            return "<html><body style='font-family:Segoe UI;padding:4px;color:#f8fafc;background-color:#0f172a'>"
+                 + "<b>For\u00e7a Geral (Overall): " + f2.fi() + "</b><br>"
+                 + "<span style='color:#94a3b8'>\u00cdndice global de habilidade do atleta</span>"
+                 + "</body></html>";
+        } else if (x <= 340) {
+            return "<html><body style='font-family:Segoe UI;padding:4px;color:#f8fafc;background-color:#0f172a'>"
+                 + "<b>Caracter\u00edsticas T\u00e9cnicas:</b><br>"
+                 + "\u2022 " + (cr1.isEmpty() ? "Nenhuma" : cr1) + "<br>"
+                 + "\u2022 " + (cr2.isEmpty() ? "Nenhuma" : cr2)
+                 + "</body></html>";
+        } else if (x <= 390) {
+            return "<html><body style='font-family:Segoe UI;padding:4px;color:#f8fafc;background-color:#0f172a'>"
+                 + "<b style='color:#facc15'>\u26bd Gols Marcados na Temporada: " + gols + "</b><br>"
+                 + "<span style='color:#94a3b8'>Total de gols em todas as competi\u00e7\u00f5es</span>"
+                 + "</body></html>";
+        } else if (x <= 445) {
+            return "<html><body style='font-family:Segoe UI;padding:4px;color:#f8fafc;background-color:#0f172a'>"
+                 + "<b style='color:#38bdf8'>\ud83d\udc5f Assist\u00eancias na Temporada: " + assists + "</b><br>"
+                 + "<span style='color:#94a3b8'>Passes diretos para gol na temporada</span>"
+                 + "</body></html>";
+        } else {
+            return "<html><body style='font-family:Segoe UI;padding:4px;color:#f8fafc;background-color:#0f172a'>"
+                 + "<b>Nota M\u00e9dia: " + notaStr + "</b><br>"
+                 + "<span style='color:#94a3b8'>Desempenho m\u00e9dio nas partidas oficiais</span>"
+                 + "</body></html>";
+        }
+    }
+
+    /**
+     * Retorna o tooltip informativo para as colunas da barra superior (benchHeader / availHeader).
+     */
+    public static String getHeaderTooltip(int x, boolean isBench) {
+        if (x <= 162) {
+            return isBench
+                ? "<html><body style='font-family:Segoe UI;padding:4px;color:#f8fafc;background-color:#0f172a'><b>Banco de Reservas:</b> 11 suplentes relacionados para a partida</body></html>"
+                : "<html><body style='font-family:Segoe UI;padding:4px;color:#f8fafc;background-color:#0f172a'><b>Fora do Banco:</b> Atletas do elenco principal dispon\u00edveis para relacionar</body></html>";
+        } else if (x <= 192) {
+            return "<html><body style='font-family:Segoe UI;padding:4px;color:#f8fafc;background-color:#0f172a'><b>FOR / OVR:</b> For\u00e7a geral do atleta</body></html>";
+        } else if (x <= 340) {
+            return "<html><body style='font-family:Segoe UI;padding:4px;color:#f8fafc;background-color:#0f172a'><b>Habilidades:</b> Principais atributos t\u00e9cnicos e caracter\u00edsticas do jogador</body></html>";
+        } else if (x <= 390) {
+            return "<html><body style='font-family:Segoe UI;padding:4px;color:#f8fafc;background-color:#0f172a'><b>\u26bd Gols:</b> N\u00famero total de gols marcados pelo atleta na temporada</body></html>";
+        } else if (x <= 445) {
+            return "<html><body style='font-family:Segoe UI;padding:4px;color:#f8fafc;background-color:#0f172a'><b>\ud83d\udc5f Assist\u00eancias:</b> N\u00famero de assist\u00eancias para gol na temporada</body></html>";
+        } else {
+            return "<html><body style='font-family:Segoe UI;padding:4px;color:#f8fafc;background-color:#0f172a'><b>Nota:</b> Nota m\u00e9dia de avalia\u00e7\u00e3o nas partidas disputadas</body></html>";
+        }
+    }
+
+    /**
+     * UI moderna para os cabeçalhos de lista (Barra Superior), com alinhamento perfeito de colunas.
+     */
+    public static class PreMatchHeaderUI extends javax.swing.plaf.basic.BasicLabelUI {
+        private final String defaultTitle;
+        private final boolean isBench;
+
+        public PreMatchHeaderUI(String defaultTitle, boolean isBench) {
+            this.defaultTitle = defaultTitle;
+            this.isBench = isBench;
+        }
+
+        @Override
+        public void paint(Graphics g, JComponent c) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
+            g2.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+
+            int w = c.getWidth();
+            int h = c.getHeight();
+
+            // Card background com cantos arredondados e gradiente escuro moderno
+            GradientPaint gp = new GradientPaint(0, 0, new Color(24, 33, 52), 0, h, new Color(15, 23, 42));
+            g2.setPaint(gp);
+            g2.fillRoundRect(0, 0, w, h, 8, 8);
+
+            g2.setColor(new Color(51, 65, 85, 200));
+            g2.setStroke(new BasicStroke(1.0f));
+            g2.drawRoundRect(0, 0, w - 1, h - 1, 8, 8);
+
+            // Título dinâmico
+            String text = ((JLabel) c).getText();
+            String displayTitle;
+            if (text != null && text.contains("CATEGORIAS")) {
+                displayTitle = "CATEGORIAS DE BASE (SUB-20)";
+            } else if (text != null && text.contains("BANCO DE RESERVAS")) {
+                displayTitle = "BANCO DE RESERVAS (11)";
+            } else if (text != null && text.contains("FORA DO BANCO")) {
+                displayTitle = "FORA DO BANCO (DISPON\u00cdVEIS)";
+            } else {
+                displayTitle = defaultTitle;
+            }
+
+            g2.setFont(new Font("Segoe UI", Font.BOLD, 11));
+            FontMetrics fmT = g2.getFontMetrics();
+            int ty = (h - fmT.getHeight()) / 2 + fmT.getAscent();
+
+            // Pill de destaque na lateral esquerda
+            g2.setColor(isBench ? new Color(56, 189, 248) : new Color(245, 158, 11));
+            g2.fillRoundRect(8, 5, 3, h - 10, 2, 2);
+
+            g2.setColor(Color.WHITE);
+            g2.drawString(displayTitle, 16, ty);
+
+            // Cabeçalhos de Colunas alinhados com as colunas dos jogadores:
+            // OVR em x = 168
+            // HABILIDADES em x = 196
+            // ⚽ GOLS em x = 344
+            // 👟 ASSIST. em x = 394
+            // NOTA em x = w - 48
+            g2.setFont(new Font("Segoe UI", Font.BOLD, 9));
+            FontMetrics fmH = g2.getFontMetrics();
+            int hy = (h - fmH.getHeight()) / 2 + fmH.getAscent();
+            g2.setColor(new Color(148, 163, 184));
+
+            g2.drawString("OVR", 168, hy);
+            g2.drawString("HABILIDADES", 196, hy);
+
+            // ⚽ GOLS
+            drawSoccerBall(g2, 344, (h - 11) / 2, 11);
+            g2.setColor(new Color(148, 163, 184));
+            g2.drawString("GOLS", 358, hy);
+
+            // 👟 ASSIST.
+            drawCleatBoot(g2, 394, (h - 11) / 2, 12, 11);
+            g2.setColor(new Color(148, 163, 184));
+            g2.drawString("ASSIST.", 410, hy);
+
+            // NOTA
+            g2.drawString("NOTA", w - 48, hy);
+
+            g2.dispose();
+        }
     }
 
     /**
@@ -1119,7 +1465,7 @@ public class EaFcUiHelper {
             int benchSlots = 11;
             setActiveBenchSlots(benchSlots);
 
-            // 3. Cabeçalho: Banco de Reservas
+            // 3. Cabeçalho: Banco de Reservas (Barra Superior)
             benchHeader.setBounds(440, 4, 574, 24);
             benchHeader.setBackground(CARD_BG);
             benchHeader.setForeground(TEXT_WHITE);
@@ -1130,9 +1476,11 @@ public class EaFcUiHelper {
                 new RoundedBorder(10, BORDER_COLOR, 1),
                 BorderFactory.createEmptyBorder(4, 12, 4, 12)
             ));
+            benchHeader.setUI(new PreMatchHeaderUI("BANCO DE RESERVAS  \u2022  11 SUPLENTES", true));
 
             // 4. Cabeçalho / Separador: Jogadores Disponíveis / Fora do Banco
-            availHeader.setBounds(440, getAvailY(), 574, 24);
+            final int fixedAvailY = getAvailY();
+            availHeader.setBounds(440, fixedAvailY, 574, 24);
             availHeader.setBackground(CARD_BG);
             availHeader.setForeground(TEXT_WHITE);
             availHeader.setFont(FONT_TITLE);
@@ -1142,24 +1490,131 @@ public class EaFcUiHelper {
                 new RoundedBorder(10, BORDER_COLOR, 1),
                 BorderFactory.createEmptyBorder(4, 12, 4, 12)
             ));
+            availHeader.setUI(new PreMatchHeaderUI("FORA DO BANCO (DISPON\u00cdVEIS)", false));
 
             // Posiciona os rótulos AA (Banco) e AB (Fora do Banco) dentro de bp
+            JLabel lblAA = null;
+            JLabel lblAB = null;
             try {
                 Field fAA = root.getClass().getDeclaredField("AA");
                 fAA.setAccessible(true);
-                JLabel lblAA = (JLabel) fAA.get(root);
+                lblAA = (JLabel) fAA.get(root);
                 if (lblAA != null) {
                     lblAA.setBounds(440, 30, 574, 11 * 27);
                 }
                 Field fAB = root.getClass().getDeclaredField("AB");
                 fAB.setAccessible(true);
-                JLabel lblAB = (JLabel) fAB.get(root);
+                lblAB = (JLabel) fAB.get(root);
                 if (lblAB != null) {
                     lblAB.setBounds(440, getAvailListY(), 574, 285);
                 }
                 bp.setLayer(benchHeader, JLayeredPane.DRAG_LAYER);
                 bp.setLayer(availHeader, JLayeredPane.DRAG_LAYER);
             } catch (Throwable ignored) {}
+
+            // Atualiza restrições no LayoutManager components.b para NUNCA mais resetar availHeader para y=185
+            LayoutManager lm = bp.getLayout();
+            if (lm != null) {
+                try {
+                    Field naField = lm.getClass().getDeclaredField("NA");
+                    naField.setAccessible(true);
+                    java.util.Hashtable naMap = (java.util.Hashtable) naField.get(lm);
+                    if (naMap != null) {
+                        naMap.put(benchHeader, new components.a(440, 4, 574, 24));
+                        naMap.put(availHeader, new components.a(440, fixedAvailY, 574, 24));
+                        if (lblAA != null) naMap.put(lblAA, new components.a(440, 30, 574, 11 * 27));
+                        if (lblAB != null) naMap.put(lblAB, new components.a(440, getAvailListY(), 574, 285));
+                    }
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                }
+            }
+
+            // Trava rígida via ComponentListener: se qualquer layout tentar reposicionar, restaura imediatamente
+            benchHeader.addComponentListener(new ComponentAdapter() {
+                @Override
+                public void componentMoved(ComponentEvent e) {
+                    if (benchHeader.getY() != 4 || benchHeader.getX() != 440) {
+                        benchHeader.setBounds(440, 4, 574, 24);
+                    }
+                }
+            });
+
+            availHeader.addComponentListener(new ComponentAdapter() {
+                @Override
+                public void componentMoved(ComponentEvent e) {
+                    if (availHeader.getY() != getAvailY() || availHeader.getX() != 440) {
+                        availHeader.setBounds(440, getAvailY(), 574, 24);
+                    }
+                }
+                @Override
+                public void componentResized(ComponentEvent e) {
+                    if (availHeader.getHeight() != 24 || availHeader.getWidth() != 574) {
+                        availHeader.setBounds(440, getAvailY(), 574, 24);
+                    }
+                }
+            });
+
+            if (lblAA != null) {
+                lblAA.addComponentListener(new ComponentAdapter() {
+                    @Override
+                    public void componentMoved(ComponentEvent e) {
+                        if (e.getComponent().getY() != 30) {
+                            e.getComponent().setBounds(440, 30, 574, 11 * 27);
+                        }
+                    }
+                });
+            }
+
+            if (lblAB != null) {
+                lblAB.addComponentListener(new ComponentAdapter() {
+                    @Override
+                    public void componentMoved(ComponentEvent e) {
+                        if (e.getComponent().getY() != getAvailListY()) {
+                            e.getComponent().setBounds(440, getAvailListY(), 574, 285);
+                        }
+                    }
+                });
+            }
+
+            // Configura TooltipManager para feedback instantâneo ao passar o mouse
+            ToolTipManager.sharedInstance().setInitialDelay(150);
+            ToolTipManager.sharedInstance().setDismissDelay(10000);
+            ToolTipManager.sharedInstance().setReshowDelay(50);
+
+            // Tooltips dinâmicos na barra superior
+            MouseMotionAdapter headerTooltipAdapter = new MouseMotionAdapter() {
+                @Override
+                public void mouseMoved(MouseEvent e) {
+                    boolean isB = (e.getSource() == benchHeader);
+                    ((JComponent) e.getSource()).setToolTipText(getHeaderTooltip(e.getX(), isB));
+                }
+            };
+            benchHeader.addMouseMotionListener(headerTooltipAdapter);
+            availHeader.addMouseMotionListener(headerTooltipAdapter);
+
+            // Tooltips dinâmicos nos jogadores do banco e fora do banco
+            if (lblAA != null) {
+                final JLabel fLblAA = lblAA;
+                lblAA.addMouseMotionListener(new MouseMotionAdapter() {
+                    @Override
+                    public void mouseMoved(MouseEvent e) {
+                        best.F p = getPreMatchPlayerAt(root, true, e.getY());
+                        fLblAA.setToolTipText(getPreMatchPlayerTooltip(p, e.getX()));
+                    }
+                });
+            }
+
+            if (lblAB != null) {
+                final JLabel fLblAB = lblAB;
+                lblAB.addMouseMotionListener(new MouseMotionAdapter() {
+                    @Override
+                    public void mouseMoved(MouseEvent e) {
+                        best.F p = getPreMatchPlayerAt(root, false, e.getY());
+                        fLblAB.setToolTipText(getPreMatchPlayerTooltip(p, e.getX()));
+                    }
+                });
+            }
 
             // Adiciona suporte a rolagem (MouseWheel) na área do elenco
             bp.addMouseWheelListener(new MouseWheelListener() {

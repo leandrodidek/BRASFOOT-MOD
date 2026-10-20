@@ -132,7 +132,7 @@ public class UpdateAoPreMatch {
                 + "        int availY = mod.brasfoot.EaFcUiHelper.getAvailListY();\n"
                 + "        int rowStep = 27;\n"
                 + "        int scroll = mod.brasfoot.EaFcUiHelper.getAvailScrollIndex();\n"
-                + "        if (i >= 435 && i <= 1025 && i2 >= availY && i2 < availY + 380) {\n"
+                + "        if (i >= 435 && i <= 1025 && i2 >= availY && i2 < availY + 285) {\n"
                 + "            int visibleRow = (i2 - availY) / rowStep;\n"
                 + "            int totalAvail = 0;\n"
                 + "            if (RM != null) totalAvail = RM.length;\n"
@@ -158,7 +158,7 @@ public class UpdateAoPreMatch {
                 + "    }\n\n"
                 + "    public static boolean X(int i, int i2) {\n"
                 + "        int availY = mod.brasfoot.EaFcUiHelper.getAvailY();\n"
-                + "        return i >= 435 && i <= 1025 && i2 >= availY && i2 <= 630;\n"
+                + "        return i >= 435 && i <= 1025 && i2 >= availY && i2 <= 655;\n"
                 + "    }\n\n    ";
             content = content.substring(0, idxUStart) + newUVX + content.substring(idxAStart);
             System.out.println("[UpdateAo] 8. Updated methods U, V, W, X.");
@@ -184,19 +184,19 @@ public class UpdateAoPreMatch {
 
         // 10. Atualiza RD e RE
         content = content.replace("private static int RD = 435;\n    private static int RE = best.aq.aer;",
-                                  "private static int RD = 440;\n    private static int RE = 250;");
+                                  "private static int RD = 440;\n    private static int RE = 361;");
 
         // 11. Ajusta tamanho da imagem de retorno do banco pré-jogo (i3 == 1)
         String oldBenchDim = "if (i3 == 1) {\n            i4 = 580;\n            i5 = 160;\n        }";
-        String newBenchDim = "if (i3 == 1) {\n            i4 = 580;\n            i5 = 320;\n        }";
+        String newBenchDim = "if (i3 == 1) {\n            i4 = 580;\n            i5 = 300;\n        }";
         if (content.contains(oldBenchDim)) {
             content = content.replace(oldBenchDim, newBenchDim);
-            System.out.println("[UpdateAo] 11. Adjusted pre-match bench image height to 320.");
+            System.out.println("[UpdateAo] 11. Adjusted pre-match bench image height to 300.");
         } else {
             String oldBenchDim2 = "if (i3 == 1) {\n            i4 = 480;\n            i5 = 153;\n        }";
             if (content.contains(oldBenchDim2)) {
                 content = content.replace(oldBenchDim2, newBenchDim);
-                System.out.println("[UpdateAo] 11. Adjusted pre-match bench image height (alt) to 320.");
+                System.out.println("[UpdateAo] 11. Adjusted pre-match bench image height (alt) to 300.");
             }
         }
 
@@ -240,7 +240,7 @@ public class UpdateAoPreMatch {
         if (idxAvailStart != -1 && idxAvailEnd != -1) {
             String newAvail = "public ImageIcon a(ArrayList arrayList, int i, ImageIcon imageIcon) {\n"
                 + "        int w = 580;\n"
-                + "        int h = 380;\n"
+                + "        int h = 285;\n"
                 + "        BufferedImage bufferedImage = new BufferedImage(w, h, 2);\n"
                 + "        Graphics2D graphics2DCreateGraphics = bufferedImage.createGraphics();\n"
                 + "        graphics2DCreateGraphics.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);\n"

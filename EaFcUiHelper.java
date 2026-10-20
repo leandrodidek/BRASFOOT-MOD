@@ -297,24 +297,24 @@ public class EaFcUiHelper {
         "Marca\u00e7\u00e3o", "Passe", "Resist\u00eancia", "Velocidade"
     };
 
-    private static int activeBenchSlots = 7;
+    private static int activeBenchSlots = 11;
     private static int availScrollIndex = 0;
     private static int availMaxScroll = 0;
 
     public static int getActiveBenchSlots() {
-        return activeBenchSlots;
+        return 11;
     }
 
     public static void setActiveBenchSlots(int slots) {
-        activeBenchSlots = Math.max(1, Math.min(11, slots));
+        activeBenchSlots = 11;
     }
 
     public static int getAvailY() {
-        return 30 + activeBenchSlots * 27 + 6;
+        return 30 + activeBenchSlots * 27 + 6; // 30 + 11*27 + 6 = 333
     }
 
     public static int getAvailListY() {
-        return getAvailY() + 28;
+        return getAvailY() + 28; // 333 + 28 = 361
     }
 
     public static int getAvailScrollIndex() {
@@ -1115,24 +1115,8 @@ public class EaFcUiHelper {
                 }
             }
 
-            // Detecta quantidade de suplentes configurada (7 a 11)
-            int benchSlots = 7;
-            try {
-                Field aeField = root.getClass().getDeclaredField("AE");
-                aeField.setAccessible(true);
-                ArrayList aeList = (ArrayList) aeField.get(root);
-                if (aeList != null) {
-                    int count = 0;
-                    for (int i = 26; i <= 36 && i < aeList.size(); i++) {
-                        Object aoObj = aeList.get(i);
-                        if (aoObj != null) {
-                            Method vfMethod = aoObj.getClass().getMethod("vf");
-                            if (vfMethod.invoke(aoObj) != null) count++;
-                        }
-                    }
-                    if (count > 0) benchSlots = count;
-                }
-            } catch (Throwable ignored) {}
+            // No Brasfoot pré-jogo, o banco possui 11 posições fixas (slots 26 a 36)
+            int benchSlots = 11;
             setActiveBenchSlots(benchSlots);
 
             // 3. Cabeçalho: Banco de Reservas
@@ -1140,7 +1124,7 @@ public class EaFcUiHelper {
             benchHeader.setBackground(CARD_BG);
             benchHeader.setForeground(TEXT_WHITE);
             benchHeader.setFont(FONT_TITLE);
-            benchHeader.setText("   BANCO DE RESERVAS  \u2022  " + benchSlots + " SUPLENTES");
+            benchHeader.setText("   BANCO DE RESERVAS  \u2022  11 SUPLENTES");
             benchHeader.setOpaque(true);
             benchHeader.setBorder(BorderFactory.createCompoundBorder(
                 new RoundedBorder(10, BORDER_COLOR, 1),
@@ -1165,18 +1149,16 @@ public class EaFcUiHelper {
                 fAA.setAccessible(true);
                 JLabel lblAA = (JLabel) fAA.get(root);
                 if (lblAA != null) {
-                    lblAA.setBounds(440, 30, 574, benchSlots * 27);
-                    bp.setLayer(lblAA, JLayeredPane.DEFAULT_LAYER);
+                    lblAA.setBounds(440, 30, 574, 11 * 27);
                 }
                 Field fAB = root.getClass().getDeclaredField("AB");
                 fAB.setAccessible(true);
                 JLabel lblAB = (JLabel) fAB.get(root);
                 if (lblAB != null) {
-                    lblAB.setBounds(440, getAvailListY(), 574, Math.max(100, 625 - getAvailListY()));
-                    bp.setLayer(lblAB, JLayeredPane.DEFAULT_LAYER);
+                    lblAB.setBounds(440, getAvailListY(), 574, 285);
                 }
-                bp.setLayer(benchHeader, JLayeredPane.PALETTE_LAYER);
-                bp.setLayer(availHeader, JLayeredPane.PALETTE_LAYER);
+                bp.setLayer(benchHeader, JLayeredPane.DRAG_LAYER);
+                bp.setLayer(availHeader, JLayeredPane.DRAG_LAYER);
             } catch (Throwable ignored) {}
 
             // Adiciona suporte a rolagem (MouseWheel) na área do elenco

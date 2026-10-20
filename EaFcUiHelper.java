@@ -169,6 +169,64 @@ public class EaFcUiHelper {
     private static JPanel rootRef = null;
     private static JCheckBox junioresCheckRef = null;
 
+    private static volatile int dragHoverSlot = -1;
+    private static volatile int hoverBenchSlot = -1;
+
+    public static int getDragHoverSlot() {
+        return dragHoverSlot;
+    }
+
+    public static void clearDragHover() {
+        dragHoverSlot = -1;
+        hoverBenchSlot = -1;
+        if (rootRef != null) {
+            rootRef.repaint();
+        }
+    }
+
+    public static void drawTargetCornerBrackets(Graphics2D g2, int x, int y, int w, int h) {
+        if (g2 == null) return;
+        Graphics2D g = (Graphics2D) g2.create();
+        try {
+            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int arm = 11;
+
+            // Sombra escura de alto contraste para destacar contra qualquer gramado
+            g.setColor(new Color(0, 0, 0, 210));
+            g.setStroke(new BasicStroke(3.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            // Top-left ┌
+            g.drawLine(x, y + arm, x, y);
+            g.drawLine(x, y, x + arm, y);
+            // Top-right ┐
+            g.drawLine(x + w - arm, y, x + w, y);
+            g.drawLine(x + w, y, x + w, y + arm);
+            // Bottom-left └
+            g.drawLine(x, y + h - arm, x, y + h);
+            g.drawLine(x, y + h, x + arm, y + h);
+            // Bottom-right ┘
+            g.drawLine(x + w - arm, y + h, x + w, y + h);
+            g.drawLine(x + w, y + h, x + w, y + h - arm);
+
+            // Mira estilo EA FC Neon Sky Blue (#38bdf8)
+            g.setColor(new Color(56, 189, 248));
+            g.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            // Top-left ┌
+            g.drawLine(x, y + arm, x, y);
+            g.drawLine(x, y, x + arm, y);
+            // Top-right ┐
+            g.drawLine(x + w - arm, y, x + w, y);
+            g.drawLine(x + w, y, x + w, y + arm);
+            // Bottom-left └
+            g.drawLine(x, y + h - arm, x, y + h);
+            g.drawLine(x, y + h, x + arm, y + h);
+            // Bottom-right ┘
+            g.drawLine(x + w - arm, y + h, x + w, y + h);
+            g.drawLine(x + w, y + h, x + w, y + h - arm);
+        } finally {
+            g.dispose();
+        }
+    }
+
     /**
      * Borda com cantos arredondados para painéis e containers do Swing.
      */
@@ -417,11 +475,21 @@ public class EaFcUiHelper {
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
         g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
 
-        // Container da linha com cantos arredondados e fundo sutil
-        g.setColor(new Color(18, 24, 38, 215));
-        g.fillRoundRect(rx, ry, colW, rowH, 6, 6);
-        g.setColor(new Color(45, 60, 88, 120));
-        g.drawRoundRect(rx, ry, colW, rowH, 6, 6);
+        // Container da linha com cantos arredondados e fundo sutil com efeito highlight
+        boolean isHovered = (slot == dragHoverSlot || slot == hoverBenchSlot);
+        if (isHovered) {
+            g.setColor(new Color(30, 58, 95, 240));
+            g.fillRoundRect(rx, ry, colW, rowH, 6, 6);
+            g.setColor(new Color(56, 189, 248, 220));
+            g.setStroke(new BasicStroke(1.5f));
+            g.drawRoundRect(rx, ry, colW, rowH, 6, 6);
+        } else {
+            g.setColor(new Color(18, 24, 38, 215));
+            g.fillRoundRect(rx, ry, colW, rowH, 6, 6);
+            g.setColor(new Color(45, 60, 88, 120));
+            g.setStroke(new BasicStroke(1.0f));
+            g.drawRoundRect(rx, ry, colW, rowH, 6, 6);
+        }
 
         int forca = f2.fi();
         int energia = f2.fp();
@@ -458,9 +526,9 @@ public class EaFcUiHelper {
 
         // 1. Badge da Posição
         int badgeX = rx + 6;
-        int badgeH = 17;
+        int badgeH = 15;
         int badgeW = 24;
-        int badgeY = ry + (rowH - badgeH) / 2;
+        int badgeY = ry + 2;
 
         g.setColor(chipBg);
         g.fillRoundRect(badgeX, badgeY, badgeW, badgeH, 4, 4);
@@ -508,8 +576,8 @@ public class EaFcUiHelper {
         int barX = badgeX;
         int barEndX = rx + 6 + 24 + 6 + 125; // x = rx + 161
         int barW = barEndX - barX;
-        int barH = 3;
-        int barY = ry + rowH - 4;
+        int barH = 2;
+        int barY = ry + 21;
 
         g.setColor(new Color(15, 23, 42, 230));
         g.fillRoundRect(barX, barY, barW, barH, 2, 2);
@@ -553,7 +621,7 @@ public class EaFcUiHelper {
         FontMetrics fmCr = g.getFontMetrics(fontCr);
 
         int cr1X = rx + 196;
-        int crH = 16;
+        int crH = 15;
         int crY = badgeY;
 
         if (!cr1.isEmpty()) {
@@ -603,14 +671,14 @@ public class EaFcUiHelper {
 
         // ⚽ Gols
         int goalsIconX = rx + 344;
-        drawSoccerBall(g, goalsIconX, badgeY + 2, 13);
+        drawSoccerBall(g, goalsIconX, badgeY + 1, 13);
         String golsStr = String.valueOf(gols);
         g.setColor(gols > 0 ? new Color(250, 204, 21) : new Color(148, 163, 184));
         g.drawString(golsStr, rx + 361, statY);
 
         // 👟 Assistências
         int assistsIconX = rx + 394;
-        drawCleatBoot(g, assistsIconX, badgeY + 2, 14, 13);
+        drawCleatBoot(g, assistsIconX, badgeY + 1, 14, 13);
         String assistsStr = String.valueOf(assists);
         g.setColor(assists > 0 ? new Color(56, 189, 248) : new Color(148, 163, 184));
         g.drawString(assistsStr, rx + 412, statY);
@@ -621,7 +689,7 @@ public class EaFcUiHelper {
         String notaStr = (nota < 2.0) ? "--" : String.format(java.util.Locale.US, "%.1f", nota);
 
         int notaPillW = 42;
-        int notaPillH = 17;
+        int notaPillH = 15;
         int notaPillX = rx + colW - notaPillW - 8;
         int notaPillY = badgeY;
 
@@ -833,7 +901,7 @@ public class EaFcUiHelper {
             } else if (text != null && text.contains("BANCO DE RESERVAS")) {
                 displayTitle = "BANCO DE RESERVAS (11)";
             } else if (text != null && text.contains("FORA DO BANCO")) {
-                displayTitle = "FORA DO BANCO (DISPON\u00cdVEIS)";
+                displayTitle = "FORA DO BANCO";
             } else {
                 displayTitle = defaultTitle;
             }
@@ -1199,6 +1267,23 @@ public class EaFcUiHelper {
     public static void updateDragLocation(JLabel ac, MouseEvent e) {
         if (ac == null || e == null) return;
         ac.setLocation(e.getX() - 22, e.getY() - 22);
+
+        int prevHover = dragHoverSlot;
+        int hover = -1;
+        int mx = e.getX();
+        int my = e.getY();
+        try {
+            if (components.ao.V(mx, my)) {
+                hover = components.ao.S(mx, my);
+            } else if (components.ao.X(mx, my)) {
+                hover = components.ao.U(mx, my);
+            }
+        } catch (Throwable ignored) {}
+
+        dragHoverSlot = hover;
+        if (prevHover != hover && rootRef != null) {
+            rootRef.repaint();
+        }
     }
 
     /**
@@ -1206,6 +1291,7 @@ public class EaFcUiHelper {
      * ou solte o mouse fora do jogo, restaurando imediatamente o atleta à sua posição original.
      */
     public static void cancelDrag(final JPanel root, final JLayeredPane bp) {
+        clearDragHover();
         if (root == null) return;
         try {
             Field fAC = null;
@@ -1484,13 +1570,13 @@ public class EaFcUiHelper {
             availHeader.setBackground(CARD_BG);
             availHeader.setForeground(TEXT_WHITE);
             availHeader.setFont(FONT_TITLE);
-            availHeader.setText("   FORA DO BANCO (DISPON\u00cdVEIS)");
+            availHeader.setText("   FORA DO BANCO");
             availHeader.setOpaque(true);
             availHeader.setBorder(BorderFactory.createCompoundBorder(
                 new RoundedBorder(10, BORDER_COLOR, 1),
                 BorderFactory.createEmptyBorder(4, 12, 4, 12)
             ));
-            availHeader.setUI(new PreMatchHeaderUI("FORA DO BANCO (DISPON\u00cdVEIS)", false));
+            availHeader.setUI(new PreMatchHeaderUI("FORA DO BANCO", false));
 
             // Posiciona os rótulos AA (Banco) e AB (Fora do Banco) dentro de bp
             JLabel lblAA = null;
@@ -1508,8 +1594,8 @@ public class EaFcUiHelper {
                 if (lblAB != null) {
                     lblAB.setBounds(440, getAvailListY(), 574, 285);
                 }
-                bp.setLayer(benchHeader, JLayeredPane.DRAG_LAYER);
-                bp.setLayer(availHeader, JLayeredPane.DRAG_LAYER);
+                bp.setLayer(benchHeader, JLayeredPane.DEFAULT_LAYER);
+                bp.setLayer(availHeader, JLayeredPane.DEFAULT_LAYER);
             } catch (Throwable ignored) {}
 
             // Atualiza restrições no LayoutManager components.b para NUNCA mais resetar availHeader para y=185
@@ -1593,28 +1679,137 @@ public class EaFcUiHelper {
             benchHeader.addMouseMotionListener(headerTooltipAdapter);
             availHeader.addMouseMotionListener(headerTooltipAdapter);
 
-            // Tooltips dinâmicos nos jogadores do banco e fora do banco
+            // Encaminhamento completo de eventos de mouse de AA (banco) e AB (fora do banco) para bp
+            // Isso restaura 100% o Drag & Drop nativo do Brasfoot ao clicar em jogadores da lista
             if (lblAA != null) {
                 final JLabel fLblAA = lblAA;
-                lblAA.addMouseMotionListener(new MouseMotionAdapter() {
+                MouseAdapter forwarderAA = new MouseAdapter() {
+                    private void forward(MouseEvent e) {
+                        Point pt = SwingUtilities.convertPoint(fLblAA, e.getPoint(), bp);
+                        MouseEvent converted = new MouseEvent(
+                            bp, e.getID(), e.getWhen(),
+                            e.getModifiersEx() | e.getModifiers(),
+                            pt.x, pt.y,
+                            e.getClickCount(),
+                            e.isPopupTrigger(),
+                            e.getButton()
+                        );
+                        bp.dispatchEvent(converted);
+                    }
+                    @Override
+                    public void mousePressed(MouseEvent e) {
+                        forward(e);
+                    }
+                    @Override
+                    public void mouseReleased(MouseEvent e) {
+                        clearDragHover();
+                        forward(e);
+                    }
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        forward(e);
+                    }
+                    @Override
+                    public void mouseDragged(MouseEvent e) {
+                        forward(e);
+                    }
                     @Override
                     public void mouseMoved(MouseEvent e) {
                         best.F p = getPreMatchPlayerAt(root, true, e.getY());
                         fLblAA.setToolTipText(getPreMatchPlayerTooltip(p, e.getX()));
+
+                        int prevH = hoverBenchSlot;
+                        Point pt = SwingUtilities.convertPoint(fLblAA, e.getPoint(), bp);
+                        if (components.ao.V(pt.x, pt.y)) {
+                            hoverBenchSlot = components.ao.S(pt.x, pt.y);
+                        } else {
+                            hoverBenchSlot = -1;
+                        }
+                        if (prevH != hoverBenchSlot) {
+                            fLblAA.repaint();
+                        }
+                        forward(e);
                     }
-                });
+                    @Override
+                    public void mouseExited(MouseEvent e) {
+                        if (hoverBenchSlot != -1) {
+                            hoverBenchSlot = -1;
+                            fLblAA.repaint();
+                        }
+                    }
+                };
+                lblAA.addMouseListener(forwarderAA);
+                lblAA.addMouseMotionListener(forwarderAA);
             }
 
             if (lblAB != null) {
                 final JLabel fLblAB = lblAB;
-                lblAB.addMouseMotionListener(new MouseMotionAdapter() {
+                MouseAdapter forwarderAB = new MouseAdapter() {
+                    private void forward(MouseEvent e) {
+                        Point pt = SwingUtilities.convertPoint(fLblAB, e.getPoint(), bp);
+                        MouseEvent converted = new MouseEvent(
+                            bp, e.getID(), e.getWhen(),
+                            e.getModifiersEx() | e.getModifiers(),
+                            pt.x, pt.y,
+                            e.getClickCount(),
+                            e.isPopupTrigger(),
+                            e.getButton()
+                        );
+                        bp.dispatchEvent(converted);
+                    }
+                    @Override
+                    public void mousePressed(MouseEvent e) {
+                        forward(e);
+                    }
+                    @Override
+                    public void mouseReleased(MouseEvent e) {
+                        clearDragHover();
+                        forward(e);
+                    }
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        forward(e);
+                    }
+                    @Override
+                    public void mouseDragged(MouseEvent e) {
+                        forward(e);
+                    }
                     @Override
                     public void mouseMoved(MouseEvent e) {
                         best.F p = getPreMatchPlayerAt(root, false, e.getY());
                         fLblAB.setToolTipText(getPreMatchPlayerTooltip(p, e.getX()));
+
+                        int prevH = hoverBenchSlot;
+                        Point pt = SwingUtilities.convertPoint(fLblAB, e.getPoint(), bp);
+                        if (components.ao.X(pt.x, pt.y)) {
+                            hoverBenchSlot = components.ao.U(pt.x, pt.y);
+                        } else {
+                            hoverBenchSlot = -1;
+                        }
+                        if (prevH != hoverBenchSlot) {
+                            fLblAB.repaint();
+                        }
+                        forward(e);
                     }
-                });
+                    @Override
+                    public void mouseExited(MouseEvent e) {
+                        if (hoverBenchSlot != -1) {
+                            hoverBenchSlot = -1;
+                            fLblAB.repaint();
+                        }
+                    }
+                };
+                lblAB.addMouseListener(forwarderAB);
+                lblAB.addMouseMotionListener(forwarderAB);
             }
+
+            // Ao soltar o mouse em qualquer lugar de bp, limpa a mira de cantos (crosshair)
+            bp.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseReleased(MouseEvent e) {
+                    clearDragHover();
+                }
+            });
 
             // Adiciona suporte a rolagem (MouseWheel) na área do elenco
             bp.addMouseWheelListener(new MouseWheelListener() {
@@ -1664,7 +1859,7 @@ public class EaFcUiHelper {
                                 availHeader.setText("   CATEGORIAS DE BASE (SUB-20)");
                                 availHeader.setForeground(AMBER);
                             } else {
-                                availHeader.setText("   FORA DO BANCO (DISPON\u00cdVEIS)");
+                                availHeader.setText("   FORA DO BANCO");
                                 availHeader.setForeground(TEXT_WHITE);
                             }
 
@@ -2139,7 +2334,7 @@ public class EaFcUiHelper {
     }
 
     public static int calculateOverall(List<best.F> players, List<Integer> slots) {
-        if (players == null || players.isEmpty()) return 70;
+        if (players == null || players.isEmpty()) return 0;
         int sum = 0;
         for (int i = 0; i < players.size(); i++) {
             best.F p = players.get(i);
@@ -2151,7 +2346,7 @@ public class EaFcUiHelper {
 
     public static int[] calculateTeamAttributes(List<best.F> starters, List<Integer> slots) {
         if (starters == null || starters.isEmpty()) {
-            return new int[]{75, 75, 75, 75, 75, 75};
+            return new int[]{0, 0, 0, 0, 0, 0};
         }
 
         int teamOvr = calculateOverall(starters, slots);

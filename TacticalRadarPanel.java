@@ -113,7 +113,8 @@ public class TacticalRadarPanel extends JPanel {
     }
 
     private static int clamp(int val) {
-        return Math.max(20, Math.min(99, val));
+        if (val <= 0) return 0;
+        return Math.max(1, Math.min(99, val));
     }
 
     @Override
@@ -236,30 +237,32 @@ public class TacticalRadarPanel extends JPanel {
             g2.drawLine(cx, cy, ex, ey);
         }
 
-        Polygon dataPoly = new Polygon();
-        Point[] points = new Point[n];
-        for (int i = 0; i < n; i++) {
-            double angle = -Math.PI / 2.0 + (i * 2.0 * Math.PI / n);
-            double norm = 0.20 + (Math.max(20, Math.min(99, stats[i])) / 99.0) * 0.80;
-            int px = (int) (cx + (r * norm) * Math.cos(angle));
-            int py = (int) (cy + (r * norm) * Math.sin(angle));
-            dataPoly.addPoint(px, py);
-            points[i] = new Point(px, py);
-        }
+        if (ovrVal > 0) {
+            Polygon dataPoly = new Polygon();
+            Point[] points = new Point[n];
+            for (int i = 0; i < n; i++) {
+                double angle = -Math.PI / 2.0 + (i * 2.0 * Math.PI / n);
+                double norm = 0.20 + (Math.max(0, Math.min(99, stats[i])) / 99.0) * 0.80;
+                int px = (int) (cx + (r * norm) * Math.cos(angle));
+                int py = (int) (cy + (r * norm) * Math.sin(angle));
+                dataPoly.addPoint(px, py);
+                points[i] = new Point(px, py);
+            }
 
-        g2.setColor(polyFill);
-        g2.fillPolygon(dataPoly);
+            g2.setColor(polyFill);
+            g2.fillPolygon(dataPoly);
 
-        g2.setColor(polyBorder);
-        g2.setStroke(new BasicStroke(2.0f));
-        g2.drawPolygon(dataPoly);
+            g2.setColor(polyBorder);
+            g2.setStroke(new BasicStroke(2.0f));
+            g2.drawPolygon(dataPoly);
 
-        for (int i = 0; i < n; i++) {
-            Point pt = points[i];
-            g2.setColor(ATTR_COLORS[i]);
-            g2.fillOval(pt.x - 3, pt.y - 3, 6, 6);
-            g2.setColor(Color.WHITE);
-            g2.fillOval(pt.x - 1, pt.y - 1, 2, 2);
+            for (int i = 0; i < n; i++) {
+                Point pt = points[i];
+                g2.setColor(ATTR_COLORS[i]);
+                g2.fillOval(pt.x - 3, pt.y - 3, 6, 6);
+                g2.setColor(Color.WHITE);
+                g2.fillOval(pt.x - 1, pt.y - 1, 2, 2);
+            }
         }
 
         g2.setFont(new Font("Verdana", Font.BOLD, 10));
@@ -304,7 +307,7 @@ public class TacticalRadarPanel extends JPanel {
         Font fontOvrVal = new Font("Verdana", Font.BOLD, 17);
         g2.setFont(fontOvrVal);
         FontMetrics fmOvrVal = g2.getFontMetrics(fontOvrVal);
-        String ovrStr = String.valueOf(ovrVal);
+        String ovrStr = (ovrVal <= 0) ? "--" : String.valueOf(ovrVal);
         g2.setColor(TEXT_WHITE);
         g2.drawString(ovrStr, cx - (fmOvrVal.stringWidth(ovrStr) / 2), cy + 14);
     }

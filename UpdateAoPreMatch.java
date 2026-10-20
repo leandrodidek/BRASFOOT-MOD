@@ -26,7 +26,10 @@ public class UpdateAoPreMatch {
         // 2. Aumenta tamanho da camisa no campo e adiciona interpolação bilinear
         String oldDrawJersey = "graphics2DCreateGraphics.drawImage(image, i9, i10, (ImageObserver) null);";
         String newDrawJersey = "graphics2DCreateGraphics.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);\n"
-            + "                graphics2DCreateGraphics.drawImage(image, i9 - 4, i10 - 4, 48, 48, (ImageObserver) null);";
+            + "                graphics2DCreateGraphics.drawImage(image, i9 - 4, i10 - 4, 48, 48, (ImageObserver) null);\n"
+            + "                if (mod.brasfoot.EaFcUiHelper.getDragHoverSlot() == i8) {\n"
+            + "                    mod.brasfoot.EaFcUiHelper.drawTargetCornerBrackets(graphics2DCreateGraphics, i9 - 6, i10 - 6, 52, 52);\n"
+            + "                }";
         if (content.contains(oldDrawJersey)) {
             content = content.replace(oldDrawJersey, newDrawJersey);
             System.out.println("[UpdateAo] 2. Replaced jersey draw call.");
@@ -305,5 +308,69 @@ public class UpdateAoPreMatch {
 
         Files.write(targetFile.toPath(), content.getBytes("UTF-8"));
         System.out.println("SUCCESS: ao.java restored and updated cleanly!");
+
+        updateKJava();
+    }
+
+    private static void updateKJava() throws Exception {
+        File origK = new File("C:/Brasfoot22-23/projeto/src_decompiled/sources/components/K.java");
+        File targetK = new File("C:/Brasfoot22-23/projeto/src_full/sources/components/K.java");
+
+        String kContent = "package components;\n\n"
+            + "import a.bz;\n"
+            + "import c.a;\n"
+            + "import java.awt.Point;\n"
+            + "import java.awt.event.MouseEvent;\n"
+            + "import javax.swing.JLayeredPane;\n\n"
+            + "public class K extends JLayeredPane {\n"
+            + "    public String getToolTipText(MouseEvent mouseEvent) {\n"
+            + "        new Point(mouseEvent.getX(), mouseEvent.getY());\n"
+            + "        if (ao.V(mouseEvent.getX(), mouseEvent.getY())) {\n"
+            + "            int iS = ao.S(mouseEvent.getX(), mouseEvent.getY());\n"
+            + "            if (iS >= 1 && iS < bz.oa().size() && ((ao) bz.oa().get(iS)).x() != null) {\n"
+            + "                best.F f2 = ((ao) bz.oa().get(iS)).x();\n"
+            + "                String str = \"\";\n"
+            + "                Double dValueOf = Double.valueOf(f2.F());\n"
+            + "                String str2 = String.format(\"%.2f\", dValueOf);\n"
+            + "                if (dValueOf.doubleValue() < 2.0d) {\n"
+            + "                    str2 = \"--\";\n"
+            + "                }\n"
+            + "                if (iS <= 25 && best.aq.sE != null && iS < best.aq.sE.length && best.aq.sE[iS] != null && best.aq.sE[iS][0] != f2.getPosicao()) {\n"
+            + "                    str = \"<br>Improvisado como \" + best.aq.rH[best.aq.sE[iS][0]];\n"
+            + "                }\n"
+            + "                int gols = 0;\n"
+            + "                int assists = 0;\n"
+            + "                try { gols = f2.gt(); } catch (Throwable ignored) {}\n"
+            + "                try { assists = f2.gs(); } catch (Throwable ignored) {}\n"
+            + "                String stats = \"<br><b>Gols:</b> \" + gols + \" | <b>Assist:</b> \" + assists;\n\n"
+            + "                return !a.SR.isHabilidadeIndividual() ? \n"
+            + "                    \"<html>\" + f2.getNome() + \"(F:\" + Integer.toString(f2.fi()) + \" E:\" + Integer.toString(f2.fp()) + \")<br><b>Posi\\u00e7\\u00e3o original:</b> \" + best.aq.rH[f2.getPosicao()] + \"<br><b>Lado original:</b> \" + best.aq.rK[f2.getLado()] + \"<br><b>Idade:</b> \" + Integer.toString(f2.getIdade()) + \"<br><b>Caract:</b> \" + best.aq.qN[f2.getCr1()] + \"/\" + best.aq.qN[f2.getCr2()] + \"<br><b>Nota m\\u00e9dia:</b> \" + str2 + stats + str + \"</html>\"\n"
+            + "                    : \"<html>\" + f2.getNome() + \" (E:\" + Integer.toString(f2.fp()) + \")<br><b>Posi\\u00e7\\u00e3o original: </b>\" + best.aq.rH[f2.getPosicao()] + \"<br><b>Lado original: </b>\" + best.aq.rK[f2.getLado()] + \"<br><b>Idade: </b>\" + Integer.toString(f2.getIdade()) + \"<br><b>Caract: </b>\" + best.aq.qN[f2.getCr1()] + \"/\" + best.aq.qN[f2.getCr2()] + \"<br><b>Gol: \" + Integer.toString(f2.gK()) + \"<br><b>Des: \" + Integer.toString(f2.gN()) + \"<br><b>Arm: \" + Integer.toString(f2.gO()) + \"<br><b>Fin: \" + Integer.toString(f2.gP()) + \"<br><b>Vel: \" + Integer.toString(f2.gJ()) + \"<br><b>Tec: \" + Integer.toString(f2.gL()) + \"<br><b>Pas: \" + Integer.toString(f2.gM()) + \"<br><b>Nota m\\u00e9dia:</b> \" + str2 + stats + str + \"</html>\";\n"
+            + "            }\n"
+            + "        } else if (ao.X(mouseEvent.getX(), mouseEvent.getY())) {\n"
+            + "            int iU = ao.U(mouseEvent.getX(), mouseEvent.getY());\n"
+            + "            if (iU >= 1 && iU < bz.oa().size() && ((ao) bz.oa().get(iU)).x() != null) {\n"
+            + "                best.F f2 = ((ao) bz.oa().get(iU)).x();\n"
+            + "                Double dValueOf2 = Double.valueOf(f2.F());\n"
+            + "                String str3 = String.format(\"%.2f\", dValueOf2);\n"
+            + "                if (dValueOf2.doubleValue() < 2.0d) {\n"
+            + "                    str3 = \"--\";\n"
+            + "                }\n"
+            + "                int gols = 0;\n"
+            + "                int assists = 0;\n"
+            + "                try { gols = f2.gt(); } catch (Throwable ignored) {}\n"
+            + "                try { assists = f2.gs(); } catch (Throwable ignored) {}\n"
+            + "                String stats = \"<br><b>Gols:</b> \" + gols + \" | <b>Assist:</b> \" + assists;\n\n"
+            + "                return !a.SR.isHabilidadeIndividual() ? \n"
+            + "                    \"<html>\" + f2.getNome() + \"<br><b>Posi\\u00e7\\u00e3o original:</b> \" + best.aq.rH[f2.getPosicao()] + \"<br><b>Lado original:</b> \" + best.aq.rK[f2.getLado()] + \"<br><b>Idade:</b> \" + Integer.toString(f2.getIdade()) + \"<br><b>Caract:</b> \" + best.aq.qN[f2.getCr1()] + \"/\" + best.aq.qN[f2.getCr2()] + \"<br><b>Nota m\\u00e9dia:</b> \" + str3 + stats + \"</html>\"\n"
+            + "                    : \"<html>\" + f2.getNome() + \"<br><b>Posi\\u00e7\\u00e3o original:</b> \" + best.aq.rH[f2.getPosicao()] + \"<br><b>Lado original:</b> \" + best.aq.rK[f2.getLado()] + \"<br><b>Idade:</b> \" + Integer.toString(f2.getIdade()) + \"<br><b>Caract:</b> \" + best.aq.qN[f2.getCr1()] + \"/\" + best.aq.qN[f2.getCr2()] + \"<br><b>Gol: \" + Integer.toString(f2.gK()) + \"<br><b>Des:\" + Integer.toString(f2.gN()) + \"<br><b>Arm:\" + Integer.toString(f2.gO()) + \"<br><b>Fin: \" + Integer.toString(f2.gP()) + \"<br><b>Vel:\" + Integer.toString(f2.gJ()) + \"<br><b>Tec:\" + Integer.toString(f2.gL()) + \"<br><b>Pas: \" + Integer.toString(f2.gM()) + \"<br><b>Nota m\\u00e9dia:</b> \" + str3 + stats + \"</html>\";\n"
+            + "            }\n"
+            + "        }\n"
+            + "        return super.getToolTipText(mouseEvent);\n"
+            + "    }\n"
+            + "}\n";
+
+        Files.write(targetK.toPath(), kContent.getBytes("UTF-8"));
+        System.out.println("SUCCESS: K.java restored and updated cleanly with goals & assists!");
     }
 }

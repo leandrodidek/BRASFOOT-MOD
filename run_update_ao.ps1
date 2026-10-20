@@ -16,4 +16,5 @@ if ($LASTEXITCODE -ne 0) { exit 1 }
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
 Copy-Item -Path "C:\Brasfoot22-23\projeto\build_mod\components\ao*.class" -Destination "$PSScriptRoot\base_patches\components\" -Force
-Write-Host "SUCCESS: ao.class compiled and synced to base_patches!"
+Copy-Item -Path "C:\Brasfoot22-23\projeto\build_mod\components\K*.class" -Destination "$PSScriptRoot\base_patches\components\" -Force
+Write-Host "SUCCESS: ao.class and K.class compiled and synced to base_patches!"

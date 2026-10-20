@@ -228,58 +228,7 @@ public class FullEaFcInjector {
                         return new MethodVisitor(Opcodes.ASM5, null) {};
                     }
 
-                    // b(MouseEvent): Início do arrasto (Drag & Drop) com o card completo (camisa + subcard)
-                    if ("b".equals(name) && "(Ljava/awt/event/MouseEvent;)V".equals(desc)) {
-                        return new MethodVisitor(Opcodes.ASM5, mv) {
-                            private boolean afterGetX = false;
-                            private boolean afterGetY = false;
-                            private int fiftyCount = 0;
 
-                            @Override
-                            public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
-                                afterGetX = ("getX".equals(name) && "()I".equals(desc));
-                                afterGetY = ("getY".equals(name) && "()I".equals(desc));
-
-                                if (opcode == Opcodes.INVOKEVIRTUAL && "a/bz".equals(owner) && "a".equals(name) && "(ILbest/F;)Ljavax/swing/ImageIcon;".equals(desc)) {
-                                    super.visitMethodInsn(Opcodes.INVOKESTATIC, "mod/brasfoot/EaFcUiHelper", "createDragPlayerIcon",
-                                        "(La/bz;ILbest/F;)Ljavax/swing/ImageIcon;", false);
-                                    return;
-                                }
-                                super.visitMethodInsn(opcode, owner, name, desc, itf);
-                            }
-
-                            @Override
-                            public void visitIntInsn(int opcode, int operand) {
-                                if (opcode == Opcodes.BIPUSH) {
-                                    if (afterGetX && operand == 25) {
-                                        afterGetX = false;
-                                        super.visitIntInsn(Opcodes.BIPUSH, 75);
-                                        return;
-                                    }
-                                    if (afterGetY && operand == -25) {
-                                        afterGetY = false;
-                                        super.visitIntInsn(Opcodes.BIPUSH, -24);
-                                        return;
-                                    }
-                                    if (afterGetY && operand == 25) {
-                                        afterGetY = false;
-                                        super.visitIntInsn(Opcodes.BIPUSH, 24);
-                                        return;
-                                    }
-                                    if (operand == 50) {
-                                        fiftyCount++;
-                                        if (fiftyCount % 2 == 1) {
-                                            super.visitIntInsn(Opcodes.SIPUSH, 150);
-                                        } else {
-                                            super.visitIntInsn(Opcodes.SIPUSH, 102);
-                                        }
-                                        return;
-                                    }
-                                }
-                                super.visitIntInsn(opcode, operand);
-                            }
-                        };
-                    }
 
                     return new MethodVisitor(Opcodes.ASM5, mv) {
                         @Override

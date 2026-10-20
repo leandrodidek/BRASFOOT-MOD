@@ -80,11 +80,20 @@ public class InMatchHudManager {
                 dialog.setSize(WIN_WIDTH, WIN_HEIGHT);
                 dialog.setPreferredSize(new Dimension(WIN_WIDTH, WIN_HEIGHT));
                 dialog.setLocationRelativeTo(null);
+                try {
+                    if (dialog.isUndecorated()) {
+                        dialog.setShape(new RoundRectangle2D.Float(0, 0, WIN_WIDTH, WIN_HEIGHT, 20, 20));
+                    }
+                } catch (Throwable ignored) {}
             }
 
             root.setBackground(BG_DEEP);
             root.setLayout(null);
             root.setPreferredSize(new Dimension(WIN_WIDTH, WIN_HEIGHT));
+            root.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createEmptyBorder(2, 2, 2, 2),
+                new EaFcUiHelper.RoundedBorder(16, new Color(45, 60, 88, 180), 1)
+            ));
 
             // Reseta referências cacheadas da sessão anterior para evitar reutilizar componentes de diálogo destruído
             userTacticsCard = null;
@@ -213,13 +222,16 @@ public class InMatchHudManager {
                 oppBenchLabel.setBackground(BG_DEEP);
                 oppPreviewPanel.add(oppBenchLabel);
 
-                // Campo do adversário: pinta a grama igual ao do usuário + cards dos atletas por cima
+                // Campo do adversário: pinta a grama igual ao do usuário + cards dos atletas por cima (cantos arredondados)
                 oppPitchComp = new JPanel(null) {
                     @Override
                     protected void paintComponent(Graphics g) {
                         super.paintComponent(g);
                         Graphics2D g2 = (Graphics2D) g.create();
                         EaFcUiHelper.applyHighQualityRendering(g2);
+                        Shape oldClip = g2.getClip();
+                        RoundRectangle2D.Float round = new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 18, 18);
+                        g2.clip(round);
                         if (currentPitchBg != null) {
                             g2.drawImage(currentPitchBg, 0, 0, getWidth(), getHeight(), null);
                         } else {
@@ -229,6 +241,10 @@ public class InMatchHudManager {
                         if (currentOppPlayersImg != null) {
                             g2.drawImage(currentOppPlayersImg, 0, 0, null);
                         }
+                        g2.setClip(oldClip);
+                        g2.setColor(new Color(45, 60, 88, 160));
+                        g2.setStroke(new BasicStroke(1.5f));
+                        g2.draw(round);
                         g2.dispose();
                     }
                 };
@@ -237,9 +253,28 @@ public class InMatchHudManager {
                 oppPreviewPanel.add(oppPitchComp);
             }
 
-            // Pega o gramado oficial de dsPitch
-            if (dsPitch != null && dsPitch.getIcon() instanceof ImageIcon) {
-                currentPitchBg = ((ImageIcon) dsPitch.getIcon()).getImage();
+            // Pega o gramado oficial de dsPitch e aplica cantos arredondados e borda via LabelUI sem travar
+            if (dsPitch != null) {
+                dsPitch.setBorder(null);
+                if (dsPitch.getIcon() instanceof ImageIcon) {
+                    currentPitchBg = ((ImageIcon) dsPitch.getIcon()).getImage();
+                }
+                dsPitch.setUI(new javax.swing.plaf.basic.BasicLabelUI() {
+                    @Override
+                    public void paint(Graphics g, JComponent c) {
+                        Graphics2D g2 = (Graphics2D) g.create();
+                        EaFcUiHelper.applyHighQualityRendering(g2);
+                        Shape oldClip = g2.getClip();
+                        RoundRectangle2D.Float round = new RoundRectangle2D.Float(0, 0, c.getWidth(), c.getHeight(), 18, 18);
+                        g2.clip(round);
+                        super.paint(g2, c);
+                        g2.setClip(oldClip);
+                        g2.setColor(new Color(45, 60, 88, 160));
+                        g2.setStroke(new BasicStroke(1.5f));
+                        g2.draw(round);
+                        g2.dispose();
+                    }
+                });
             }
 
             if (activeTeam == 1) {

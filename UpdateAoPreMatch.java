@@ -10,43 +10,53 @@ public class UpdateAoPreMatch {
         // 0. Restaura arquivo limpo da descompilação
         Files.copy(origFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         String content = new String(Files.readAllBytes(targetFile.toPath()), "UTF-8");
-        // Normaliza quebras de linha para \n para garantir que todos os matches funcionem perfeitamente
+        // Normaliza quebras de linha para \n
         content = content.replace("\r\n", "\n");
 
-        // 1. Aumenta tamanho da camisa no campo e adiciona interpolação bilinear
+        // 1. Atualiza coordenadas de RK (banco de reservas em jogo: coluna única vertical centrada)
+        String oldRkBench = "new int[]{20, 25}, new int[]{115, 35}, new int[]{20, 125}, new int[]{115, best.aq.adb}, new int[]{20, best.aq.aer}, new int[]{115, best.aq.aeb}, new int[]{20, 305}, new int[]{115, 315}, new int[]{20, 400}, new int[]{115, 410}, new int[]{20, 495}";
+        String newRkBench = "new int[]{6, 25}, new int[]{6, 77}, new int[]{6, 129}, new int[]{6, 181}, new int[]{6, 233}, new int[]{6, 285}, new int[]{6, 337}, new int[]{6, 389}, new int[]{6, 441}, new int[]{6, 493}, new int[]{6, 545}";
+        if (content.contains(oldRkBench)) {
+            content = content.replace(oldRkBench, newRkBench);
+            System.out.println("[UpdateAo] 1. Replaced RK bench slots with vertical single-column coordinates.");
+        } else {
+            System.err.println("[UpdateAo] WARN: Could not find oldRkBench!");
+        }
+
+        // 2. Aumenta tamanho da camisa no campo e adiciona interpolação bilinear
         String oldDrawJersey = "graphics2DCreateGraphics.drawImage(image, i9, i10, (ImageObserver) null);";
         String newDrawJersey = "graphics2DCreateGraphics.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);\n"
             + "                graphics2DCreateGraphics.drawImage(image, i9 - 4, i10 - 4, 48, 48, (ImageObserver) null);";
         if (content.contains(oldDrawJersey)) {
             content = content.replace(oldDrawJersey, newDrawJersey);
-            System.out.println("[UpdateAo] 1. Replaced jersey draw call.");
+            System.out.println("[UpdateAo] 2. Replaced jersey draw call.");
         } else {
             System.err.println("[UpdateAo] WARN: Could not find oldDrawJersey!");
         }
 
-        // 2. Alinha o card do jogador no campo centralizado sob a camisa
+        // 3. Alinha o card do jogador no campo centralizado sob a camisa
         String oldDrawCard = "graphics2DCreateGraphics.drawImage(a(((ao) arrayList.get(i8)).x(), 1, i8, \"\"), i9 - 52, i10 + 47, (ImageObserver) null);";
         String newDrawCard = "graphics2DCreateGraphics.drawImage(a(((ao) arrayList.get(i8)).x(), 1, i8, \"\"), i9 - 55, i10 + 34, (ImageObserver) null);";
         if (content.contains(oldDrawCard)) {
             content = content.replace(oldDrawCard, newDrawCard);
-            System.out.println("[UpdateAo] 2. Replaced player card draw call.");
+            System.out.println("[UpdateAo] 3. Replaced player card draw call.");
         } else {
             System.err.println("[UpdateAo] WARN: Could not find oldDrawCard!");
         }
 
-        // 3. Remove ícones legados de capitão, batedor de faltas, escanteios, falso 9 e cruz de lesão
+        // 4. Remove ícones legados de capitão, faltas, escanteios, falso 9 e cruz de contusão
         int idxInjury = content.indexOf("if (((ao) arrayList.get(i8)).x().fP()) {");
         int idxRoleEnd = content.indexOf("int i12 = 22;");
         if (idxInjury != -1 && idxRoleEnd != -1 && idxInjury < idxRoleEnd) {
             content = content.substring(0, idxInjury) 
                 + "// Legacy role icons & injury cross removed (rendered by renderPlayerShirtCard)\n                    "
                 + content.substring(idxRoleEnd);
-            System.out.println("[UpdateAo] 3. Removed legacy role & injury icons.");
+            System.out.println("[UpdateAo] 4. Removed legacy role & injury icons.");
         } else {
             System.err.println("[UpdateAo] WARN: Could not find legacy role icons block!");
         }
 
-        // 4. Substitui método a(best.F f2, ...) para o layout EA FC no campo
+        // 5. Substitui método a(best.F f2, ...) para o layout EA FC no campo
         int idxCardA = content.indexOf("public static Image a(best.F f2");
         int idxCardB = content.indexOf("public static void a(Graphics2D graphics2D");
         if (idxCardA != -1 && idxCardB != -1) {
@@ -55,25 +65,25 @@ public class UpdateAoPreMatch {
                 + "        return mod.brasfoot.EaFcUiHelper.renderPlayerShirtCard(f2, i, i2, str);\n"
                 + "    }\n\n    ";
             content = content.substring(0, idxCardA) + newCardMethod + content.substring(idxCardB);
-            System.out.println("[UpdateAo] 4. Replaced a(best.F, ...) with renderPlayerShirtCard.");
+            System.out.println("[UpdateAo] 5. Replaced a(best.F, ...) with renderPlayerShirtCard.");
         } else {
             System.err.println("[UpdateAo] WARN: Could not find a(best.F, ...) method bounds!");
         }
 
-        // 5. Atualiza método S(int i, int i2) para hit-testing no campo e no banco pré-jogo
+        // 6. Atualiza método S(int i, int i2) com auto-magnetismo no campo e banco pré-jogo
         int idxSStart = content.indexOf("public static int S(int i, int i2) {");
         int idxSEnd = content.indexOf("public static int T(int i, int i2) {");
         if (idxSStart != -1 && idxSEnd != -1) {
             String newS = "public static int S(int i, int i2) {\n"
                 + "        for (int i3 = 1; i3 <= 25; i3++) {\n"
-                + "            if (i >= RJ[i3][0] && i <= RJ[i3][0] + 60 && i2 >= RJ[i3][1] && i2 <= RJ[i3][1] + 60) {\n"
+                + "            if (i >= RJ[i3][0] - 25 && i <= RJ[i3][0] + 65 && i2 >= RJ[i3][1] - 15 && i2 <= RJ[i3][1] + 65) {\n"
                 + "                return i3;\n"
                 + "            }\n"
                 + "        }\n"
                 + "        int benchY = 30;\n"
                 + "        int rowStep = 27;\n"
                 + "        int benchSlots = mod.brasfoot.EaFcUiHelper.getActiveBenchSlots();\n"
-                + "        if (i >= 440 && i <= 1018 && i2 >= benchY && i2 < benchY + benchSlots * rowStep) {\n"
+                + "        if (i >= 435 && i <= 1025 && i2 >= benchY && i2 < benchY + benchSlots * rowStep) {\n"
                 + "            int r = (i2 - benchY) / rowStep;\n"
                 + "            if (r >= 0 && r < benchSlots) {\n"
                 + "                return 26 + r;\n"
@@ -82,12 +92,39 @@ public class UpdateAoPreMatch {
                 + "        return -1;\n"
                 + "    }\n\n    ";
             content = content.substring(0, idxSStart) + newS + content.substring(idxSEnd);
-            System.out.println("[UpdateAo] 5. Updated method S(int, int).");
+            System.out.println("[UpdateAo] 6. Updated method S(int, int) with auto magnetism.");
         } else {
             System.err.println("[UpdateAo] WARN: Could not find method S bounds!");
         }
 
-        // 6. Atualiza U, V, W e X
+        // 7. Atualiza método T(int i, int i2) com auto-magnetismo no campo e banco em jogo
+        int idxTStart = content.indexOf("public static int T(int i, int i2) {");
+        int idxTEnd = content.indexOf("public static int U(int i, int i2) {");
+        if (idxTStart != -1 && idxTEnd != -1) {
+            String newT = "public static int T(int i, int i2) {\n"
+                + "        for (int i3 = 1; i3 <= 25; i3++) {\n"
+                + "            int i4 = RK[i3][0] + 200;\n"
+                + "            int i5 = RK[i3][1] + 10;\n"
+                + "            if (i >= i4 - 25 && i <= i4 + 65 && i2 >= i5 - 15 && i2 <= i5 + 65) {\n"
+                + "                return i3;\n"
+                + "            }\n"
+                + "        }\n"
+                + "        for (int i3 = 26; i3 <= 36; i3++) {\n"
+                + "            int bx = RK[i3][0];\n"
+                + "            int by = RK[i3][1];\n"
+                + "            if (i >= bx - 4 && i <= bx + 192 && i2 >= by - 2 && i2 <= by + 50) {\n"
+                + "                return i3;\n"
+                + "            }\n"
+                + "        }\n"
+                + "        return -1;\n"
+                + "    }\n\n    ";
+            content = content.substring(0, idxTStart) + newT + content.substring(idxTEnd);
+            System.out.println("[UpdateAo] 7. Updated method T(int, int) with auto magnetism.");
+        } else {
+            System.err.println("[UpdateAo] WARN: Could not find method T bounds!");
+        }
+
+        // 8. Atualiza U, V, W e X
         int idxUStart = content.indexOf("public static int U(int i, int i2) {");
         int idxAStart = content.indexOf("public ImageIcon a(ArrayList arrayList, int i, ImageIcon imageIcon, boolean z");
         if (idxUStart != -1 && idxAStart != -1) {
@@ -95,7 +132,7 @@ public class UpdateAoPreMatch {
                 + "        int availY = mod.brasfoot.EaFcUiHelper.getAvailListY();\n"
                 + "        int rowStep = 27;\n"
                 + "        int scroll = mod.brasfoot.EaFcUiHelper.getAvailScrollIndex();\n"
-                + "        if (i >= 440 && i <= 1018 && i2 >= availY && i2 < availY + 380) {\n"
+                + "        if (i >= 435 && i <= 1025 && i2 >= availY && i2 < availY + 380) {\n"
                 + "            int visibleRow = (i2 - availY) / rowStep;\n"
                 + "            int totalAvail = 0;\n"
                 + "            if (RM != null) totalAvail = RM.length;\n"
@@ -109,52 +146,69 @@ public class UpdateAoPreMatch {
                 + "    public static boolean V(int i, int i2) {\n"
                 + "        if (i < 0 || i > 434 || i2 < 0 || i2 > 640) {\n"
                 + "            int availY = mod.brasfoot.EaFcUiHelper.getAvailY();\n"
-                + "            return i >= 440 && i <= 1018 && i2 >= 20 && i2 < availY;\n"
+                + "            return i >= 435 && i <= 1025 && i2 >= 20 && i2 < availY;\n"
                 + "        }\n"
                 + "        return true;\n"
                 + "    }\n\n"
                 + "    public static boolean W(int i, int i2) {\n"
                 + "        if (i < 200 || i > 640 || i2 < 0 || i2 > 650) {\n"
-                + "            return i >= 10 && i <= 200 && i2 >= 20 && i2 <= 650;\n"
+                + "            return i >= 0 && i <= 200 && i2 >= 10 && i2 <= 650;\n"
                 + "        }\n"
                 + "        return true;\n"
                 + "    }\n\n"
                 + "    public static boolean X(int i, int i2) {\n"
                 + "        int availY = mod.brasfoot.EaFcUiHelper.getAvailY();\n"
-                + "        return i >= 440 && i <= 1018 && i2 >= availY && i2 <= 625;\n"
+                + "        return i >= 435 && i <= 1025 && i2 >= availY && i2 <= 630;\n"
                 + "    }\n\n    ";
             content = content.substring(0, idxUStart) + newUVX + content.substring(idxAStart);
-            System.out.println("[UpdateAo] 6. Updated methods U, V, W, X.");
+            System.out.println("[UpdateAo] 8. Updated methods U, V, W, X.");
         } else {
             System.err.println("[UpdateAo] WARN: Could not find method U bounds!");
         }
 
-        // 7. Ajusta tamanho da imagem de retorno do banco pré-jogo (i3 == 1)
+        // 9. Atualiza vi() e vj() para que o label AB fique dinamicamente alinhado abaixo de availHeader
+        int idxViStart = content.indexOf("public static int vi() {");
+        int idxVjEnd = content.indexOf("public static ImageIcon i(ImageIcon imageIcon) {");
+        if (idxViStart != -1 && idxVjEnd != -1) {
+            String newViVj = "public static int vi() {\n"
+                + "        return 440;\n"
+                + "    }\n\n"
+                + "    public static int vj() {\n"
+                + "        return mod.brasfoot.EaFcUiHelper.getAvailListY();\n"
+                + "    }\n\n    ";
+            content = content.substring(0, idxViStart) + newViVj + content.substring(idxVjEnd);
+            System.out.println("[UpdateAo] 9. Updated vi() and vj() to dynamic EA FC bounds.");
+        } else {
+            System.err.println("[UpdateAo] WARN: Could not find vi() and vj() method bounds!");
+        }
+
+        // 10. Atualiza RD e RE
+        content = content.replace("private static int RD = 435;\n    private static int RE = best.aq.aer;",
+                                  "private static int RD = 440;\n    private static int RE = 250;");
+
+        // 11. Ajusta tamanho da imagem de retorno do banco pré-jogo (i3 == 1)
         String oldBenchDim = "if (i3 == 1) {\n            i4 = 580;\n            i5 = 160;\n        }";
         String newBenchDim = "if (i3 == 1) {\n            i4 = 580;\n            i5 = 320;\n        }";
         if (content.contains(oldBenchDim)) {
             content = content.replace(oldBenchDim, newBenchDim);
-            System.out.println("[UpdateAo] 7. Adjusted pre-match bench image height to 320.");
+            System.out.println("[UpdateAo] 11. Adjusted pre-match bench image height to 320.");
         } else {
-            // Tenta caso alternativo 480x153
             String oldBenchDim2 = "if (i3 == 1) {\n            i4 = 480;\n            i5 = 153;\n        }";
             if (content.contains(oldBenchDim2)) {
                 content = content.replace(oldBenchDim2, newBenchDim);
-                System.out.println("[UpdateAo] 7. Adjusted pre-match bench image height (alt) to 320.");
-            } else {
-                System.err.println("[UpdateAo] WARN: Could not find oldBenchDim!");
+                System.out.println("[UpdateAo] 11. Adjusted pre-match bench image height (alt) to 320.");
             }
         }
 
-        // 8. Injeta desenho das linhas do banco na tela de pré-jogo (i3 == 1) e jogo (i3 == 3)
+        // 12. Injeta desenho das linhas do banco na tela de pré-jogo (i3 == 1) e jogo (i3 == 3)
         String targetLoop = "for (int i8 = i6; i8 <= i7; i8++) {\n            if (((ao) arrayList.get(i8)).vf() != null && i8 != i) {";
         String replacementLoop = targetLoop + "\n"
             + "                if (i3 == 3) {\n"
             + "                    if (((ao) arrayList.get(i8)).x() != null) {\n"
-            + "                        mod.brasfoot.EaFcUiHelper.drawBenchPlayerRow(graphics2DCreateGraphics, ((ao) arrayList.get(i8)).x(), i8, RK[i8][0], RK[i8][1], 188, 44);\n"
+            + "                        mod.brasfoot.EaFcUiHelper.drawBenchPlayerRow(graphics2DCreateGraphics, ((ao) arrayList.get(i8)).x(), i8, RK[i8][0], RK[i8][1], 188, 46);\n"
             + "                    } else {\n"
             + "                        graphics2DCreateGraphics.setColor(new Color(18, 24, 38, 120));\n"
-            + "                        graphics2DCreateGraphics.fillRoundRect(RK[i8][0], RK[i8][1], 188, 44, 6, 6);\n"
+            + "                        graphics2DCreateGraphics.fillRoundRect(RK[i8][0], RK[i8][1], 188, 46, 6, 6);\n"
             + "                    }\n"
             + "                    continue;\n"
             + "                }\n"
@@ -175,14 +229,14 @@ public class UpdateAoPreMatch {
             + "                }";
         if (content.contains(targetLoop)) {
             content = content.replace(targetLoop, replacementLoop);
-            System.out.println("[UpdateAo] 8. Successfully injected bench row renderer for i3 == 1 and i3 == 3!");
+            System.out.println("[UpdateAo] 12. Injected bench row renderer for i3 == 1 and i3 == 3!");
         } else {
             System.err.println("[UpdateAo] ERROR: targetLoop not found!");
         }
 
-        // 9. Atualiza método a(ArrayList arrayList, int i, ImageIcon imageIcon) para desenhar o elenco fora do banco no padrão unificado
+        // 13. Atualiza método a(ArrayList arrayList, int i, ImageIcon imageIcon) para desenhar o elenco fora do banco no padrão unificado
         int idxAvailStart = content.indexOf("public ImageIcon a(ArrayList arrayList, int i, ImageIcon imageIcon) {");
-        int idxAvailEnd = content.indexOf("public static Image a(best.F f2, int i, int i2, String str) {");
+        int idxAvailEnd = content.indexOf("public static Image a(best.F f2");
         if (idxAvailStart != -1 && idxAvailEnd != -1) {
             String newAvail = "public ImageIcon a(ArrayList arrayList, int i, ImageIcon imageIcon) {\n"
                 + "        int w = 580;\n"
@@ -244,7 +298,7 @@ public class UpdateAoPreMatch {
                 + "        return new ImageIcon(bufferedImage);\n"
                 + "    }\n\n    ";
             content = content.substring(0, idxAvailStart) + newAvail + content.substring(idxAvailEnd);
-            System.out.println("[UpdateAo] 9. Replaced available squad method with modern scrollable list.");
+            System.out.println("[UpdateAo] 13. Replaced available squad method with modern scrollable list.");
         } else {
             System.err.println("[UpdateAo] WARN: Could not find available squad method bounds!");
         }

@@ -1166,13 +1166,17 @@ public class EaFcUiHelper {
                 JLabel lblAA = (JLabel) fAA.get(root);
                 if (lblAA != null) {
                     lblAA.setBounds(440, 30, 574, benchSlots * 27);
+                    bp.setLayer(lblAA, JLayeredPane.DEFAULT_LAYER);
                 }
                 Field fAB = root.getClass().getDeclaredField("AB");
                 fAB.setAccessible(true);
                 JLabel lblAB = (JLabel) fAB.get(root);
                 if (lblAB != null) {
                     lblAB.setBounds(440, getAvailListY(), 574, Math.max(100, 625 - getAvailListY()));
+                    bp.setLayer(lblAB, JLayeredPane.DEFAULT_LAYER);
                 }
+                bp.setLayer(benchHeader, JLayeredPane.PALETTE_LAYER);
+                bp.setLayer(availHeader, JLayeredPane.PALETTE_LAYER);
             } catch (Throwable ignored) {}
 
             // Adiciona suporte a rolagem (MouseWheel) na área do elenco

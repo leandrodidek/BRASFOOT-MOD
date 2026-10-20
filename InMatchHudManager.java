@@ -213,16 +213,13 @@ public class InMatchHudManager {
                 oppBenchLabel.setBackground(BG_DEEP);
                 oppPreviewPanel.add(oppBenchLabel);
 
-                // Campo do adversário: pinta a grama igual ao do usuário + cards dos atletas por cima (com todos os cantos arredondados)
+                // Campo do adversário: pinta a grama igual ao do usuário + cards dos atletas por cima
                 oppPitchComp = new JPanel(null) {
                     @Override
                     protected void paintComponent(Graphics g) {
                         super.paintComponent(g);
                         Graphics2D g2 = (Graphics2D) g.create();
                         EaFcUiHelper.applyHighQualityRendering(g2);
-                        Shape oldClip = g2.getClip();
-                        RoundRectangle2D.Float round = new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 18, 18);
-                        g2.clip(round);
                         if (currentPitchBg != null) {
                             g2.drawImage(currentPitchBg, 0, 0, getWidth(), getHeight(), null);
                         } else {
@@ -232,10 +229,6 @@ public class InMatchHudManager {
                         if (currentOppPlayersImg != null) {
                             g2.drawImage(currentOppPlayersImg, 0, 0, null);
                         }
-                        g2.setClip(oldClip);
-                        g2.setColor(new Color(45, 60, 88, 160));
-                        g2.setStroke(new BasicStroke(1.5f));
-                        g2.draw(round);
                         g2.dispose();
                     }
                 };
@@ -244,13 +237,9 @@ public class InMatchHudManager {
                 oppPreviewPanel.add(oppPitchComp);
             }
 
-            // Pega o gramado oficial de dsPitch e aplica todos os cantos arredondados
-            if (dsPitch != null) {
-                dsPitch.setBorder(null);
-                if (dsPitch.getIcon() instanceof ImageIcon) {
-                    currentPitchBg = ((ImageIcon) dsPitch.getIcon()).getImage();
-                    dsPitch.setIcon(EaFcUiHelper.createRoundedIcon(dsPitch.getIcon(), 18));
-                }
+            // Pega o gramado oficial de dsPitch
+            if (dsPitch != null && dsPitch.getIcon() instanceof ImageIcon) {
+                currentPitchBg = ((ImageIcon) dsPitch.getIcon()).getImage();
             }
 
             if (activeTeam == 1) {

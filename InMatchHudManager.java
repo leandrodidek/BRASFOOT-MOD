@@ -208,6 +208,7 @@ public class InMatchHudManager {
                 dqBench.setBackground(BG_DEEP);
 
                 final JLabel fDqBench = dqBench;
+                final JLayeredPane fDf = df;
                 final Object fCdObj = cDObj;
                 dqBench.setUI(new javax.swing.plaf.basic.BasicLabelUI() {
                     @Override
@@ -229,41 +230,78 @@ public class InMatchHudManager {
                     }
                 });
 
-                dqBench.addMouseMotionListener(new MouseMotionAdapter() {
-                    @Override
-                    public void mouseMoved(MouseEvent e) {
-                        int my = e.getY();
-                        int prevH = EaFcUiHelper.getHoverBenchSlot();
-                        int hover = -1;
-                        for (int s = 26; s <= 36; s++) {
-                            int by = 25 + (s - 26) * 52;
-                            if (my >= by && my <= by + 46) {
-                                if (EaFcUiHelper.hasInMatchPlayer(fCdObj, s)) {
-                                    hover = s;
+                if (dqBench.getClientProperty("MOD_BENCH_FORWARDER") == null) {
+                    dqBench.putClientProperty("MOD_BENCH_FORWARDER", Boolean.TRUE);
+
+                    MouseAdapter benchForwarder = new MouseAdapter() {
+                        private void forward(MouseEvent e) {
+                            if (fDf == null) return;
+                            Point pt = SwingUtilities.convertPoint(fDqBench, e.getPoint(), fDf);
+                            MouseEvent converted = new MouseEvent(
+                                fDf, e.getID(), e.getWhen(),
+                                e.getModifiersEx() | e.getModifiers(),
+                                pt.x, pt.y,
+                                e.getClickCount(),
+                                e.isPopupTrigger(),
+                                e.getButton()
+                            );
+                            fDf.dispatchEvent(converted);
+                        }
+
+                        @Override
+                        public void mousePressed(MouseEvent e) {
+                            forward(e);
+                        }
+
+                        @Override
+                        public void mouseReleased(MouseEvent e) {
+                            EaFcUiHelper.clearDragHover();
+                            forward(e);
+                        }
+
+                        @Override
+                        public void mouseClicked(MouseEvent e) {
+                            forward(e);
+                        }
+
+                        @Override
+                        public void mouseDragged(MouseEvent e) {
+                            forward(e);
+                        }
+
+                        @Override
+                        public void mouseMoved(MouseEvent e) {
+                            int my = e.getY();
+                            int prevH = EaFcUiHelper.getHoverBenchSlot();
+                            int hover = -1;
+                            for (int s = 26; s <= 36; s++) {
+                                int by = 25 + (s - 26) * 52;
+                                if (my >= by && my <= by + 46) {
+                                    if (EaFcUiHelper.hasInMatchPlayer(fCdObj, s)) {
+                                        hover = s;
+                                    }
+                                    break;
                                 }
-                                break;
+                            }
+                            EaFcUiHelper.setHoverBenchSlot(hover);
+                            if (prevH != hover) {
+                                fDqBench.repaint();
+                            }
+                            forward(e);
+                        }
+
+                        @Override
+                        public void mouseExited(MouseEvent e) {
+                            if (EaFcUiHelper.getHoverBenchSlot() != -1) {
+                                EaFcUiHelper.setHoverBenchSlot(-1);
+                                fDqBench.repaint();
                             }
                         }
-                        EaFcUiHelper.setHoverBenchSlot(hover);
-                        if (prevH != hover) {
-                            fDqBench.repaint();
-                        }
-                    }
-                });
+                    };
 
-                dqBench.addMouseListener(new MouseAdapter() {
-                    @Override
-                    public void mouseExited(MouseEvent e) {
-                        if (EaFcUiHelper.getHoverBenchSlot() != -1) {
-                            EaFcUiHelper.setHoverBenchSlot(-1);
-                            fDqBench.repaint();
-                        }
-                    }
-                    @Override
-                    public void mouseReleased(MouseEvent e) {
-                        EaFcUiHelper.clearDragHover();
-                    }
-                });
+                    dqBench.addMouseListener(benchForwarder);
+                    dqBench.addMouseMotionListener(benchForwarder);
+                }
             }
 
             // =========================================================

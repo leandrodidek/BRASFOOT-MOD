@@ -284,7 +284,7 @@ public class FullEaFcInjector {
                         mv.visitMethodInsn(Opcodes.INVOKESTATIC, "mod/brasfoot/EaFcUiHelper", "updateInMatchDragLocation",
                             "(Ljavax/swing/JLabel;Ljava/awt/event/MouseEvent;)V", false);
                         mv.visitInsn(Opcodes.RETURN);
-                        mv.visitMaxs(2, 2);
+                        mv.visitMaxs(2, 3);
                         mv.visitEnd();
                         return new MethodVisitor(Opcodes.ASM5, null) {};
                     }

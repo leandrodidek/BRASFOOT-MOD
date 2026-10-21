@@ -169,8 +169,41 @@ public class EaFcUiHelper {
     private static JPanel rootRef = null;
     private static JCheckBox junioresCheckRef = null;
 
+    private static JLabel pitchLabelRef = null;
+    private static JLabel lblAARef = null;
+    private static JLabel lblABRef = null;
+
     private static volatile int dragHoverSlot = -1;
     private static volatile int hoverBenchSlot = -1;
+
+    public static final int[][] STARTER_COORDS = {
+        {-1, -1},
+        {190, 565}, // 1: Gol
+        {35, 425},  // 2: Lat D
+        {100, 485}, // 3: Zag
+        {190, 485}, // 4: Zag C
+        {285, 485}, // 5: Zag
+        {100, 405}, // 6: Vol
+        {190, 405}, // 7: Vol C
+        {285, 405}, // 8: Vol
+        {345, 425}, // 9: Lat E
+        {35, 265},  // 10: Ala D
+        {100, 315}, // 11: Meia
+        {190, 315}, // 12: Meia C
+        {285, 315}, // 13: Meia
+        {100, 205}, // 14: Meia Of
+        {190, 205}, // 15: Meia Of C
+        {285, 205}, // 16: Meia Of
+        {345, 265}, // 17: Ala E
+        {35, 55},   // 18: Pta D
+        {100, 115}, // 19: Ata
+        {190, 115}, // 20: Ata C
+        {285, 115}, // 21: Ata
+        {100, 35},  // 22: Cen
+        {190, 30},  // 23: Cen C
+        {285, 35},  // 24: Cen
+        {345, 55}   // 25: Pta E
+    };
 
     public static int getDragHoverSlot() {
         return dragHoverSlot;
@@ -179,9 +212,10 @@ public class EaFcUiHelper {
     public static void clearDragHover() {
         dragHoverSlot = -1;
         hoverBenchSlot = -1;
-        if (rootRef != null) {
-            rootRef.repaint();
-        }
+        if (pitchLabelRef != null) pitchLabelRef.repaint();
+        if (lblAARef != null) lblAARef.repaint();
+        if (lblABRef != null) lblABRef.repaint();
+        if (rootRef != null) rootRef.repaint();
     }
 
     public static void drawTargetCornerBrackets(Graphics2D g2, int x, int y, int w, int h) {
@@ -189,11 +223,11 @@ public class EaFcUiHelper {
         Graphics2D g = (Graphics2D) g2.create();
         try {
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            int arm = 11;
+            int arm = 12;
 
             // Sombra escura de alto contraste para destacar contra qualquer gramado
-            g.setColor(new Color(0, 0, 0, 210));
-            g.setStroke(new BasicStroke(3.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            g.setColor(new Color(0, 0, 0, 240));
+            g.setStroke(new BasicStroke(4.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
             // Top-left ┌
             g.drawLine(x, y + arm, x, y);
             g.drawLine(x, y, x + arm, y);
@@ -207,9 +241,9 @@ public class EaFcUiHelper {
             g.drawLine(x + w - arm, y + h, x + w, y + h);
             g.drawLine(x + w, y + h, x + w, y + h - arm);
 
-            // Mira estilo EA FC Neon Sky Blue (#38bdf8)
+            // Mira estilo EA FC Neon Sky Blue (#38bdf8) vibrante e nítida
             g.setColor(new Color(56, 189, 248));
-            g.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            g.setStroke(new BasicStroke(2.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
             // Top-left ┌
             g.drawLine(x, y + arm, x, y);
             g.drawLine(x, y, x + arm, y);
@@ -224,6 +258,98 @@ public class EaFcUiHelper {
             g.drawLine(x + w, y + h, x + w, y + h - arm);
         } finally {
             g.dispose();
+        }
+    }
+
+    public static void drawBenchRowHighlight(Graphics2D g2, int rx, int ry, int colW, int rowH) {
+        if (g2 == null) return;
+        Graphics2D g = (Graphics2D) g2.create();
+        try {
+            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            // 1. Efeito de brilho / vidro ciano translúcido sobre a linha inteira
+            g.setComposite(AlphaComposite.SrcOver.derive(0.35f));
+            GradientPaint gp = new GradientPaint(
+                rx, ry, new Color(56, 189, 248, 120),
+                rx + colW, ry, new Color(14, 165, 233, 30)
+            );
+            g.setPaint(gp);
+            g.fillRoundRect(rx, ry, colW, rowH, 6, 6);
+
+            // 2. Borda brilhante neon estilo EA FC no contorno completo
+            g.setComposite(AlphaComposite.SrcOver);
+            g.setColor(new Color(56, 189, 248, 220));
+            g.setStroke(new BasicStroke(1.75f));
+            g.drawRoundRect(rx, ry, colW - 1, rowH - 1, 6, 6);
+
+            // 3. Indicador lateral luminoso (pill) na borda esquerda
+            g.setColor(new Color(255, 255, 255, 240));
+            g.fillRoundRect(rx + 1, ry + 3, 3, rowH - 6, 2, 2);
+        } finally {
+            g.dispose();
+        }
+    }
+
+    public static class PitchOverlayUI extends javax.swing.plaf.basic.BasicLabelUI {
+        @Override
+        public void paint(Graphics g, JComponent c) {
+            super.paint(g, c);
+            int slot = dragHoverSlot;
+            if (slot >= 1 && slot <= 25 && slot < STARTER_COORDS.length) {
+                int jx = STARTER_COORDS[slot][0];
+                int jy = STARTER_COORDS[slot][1];
+                if (jx >= 0 && jy >= 0) {
+                    drawTargetCornerBrackets((Graphics2D) g, jx - 3, jy - 3, 56, 56);
+                }
+            }
+        }
+    }
+
+    public static class BenchOverlayUI extends javax.swing.plaf.basic.BasicLabelUI {
+        private final boolean isBench;
+
+        public BenchOverlayUI(boolean isBench) {
+            this.isBench = isBench;
+        }
+
+        @Override
+        public void paint(Graphics g, JComponent c) {
+            super.paint(g, c);
+
+            int activeSlot = -1;
+            if (isBench) {
+                if (dragHoverSlot >= 26 && dragHoverSlot <= 36) {
+                    activeSlot = dragHoverSlot;
+                } else if (hoverBenchSlot >= 26 && hoverBenchSlot <= 36) {
+                    activeSlot = hoverBenchSlot;
+                }
+                if (activeSlot >= 26 && activeSlot <= 36) {
+                    int row = activeSlot - 26;
+                    int ry = row * 27 + 1;
+                    int rx = 2;
+                    int colW = c.getWidth() - 4;
+                    int rowH = 25;
+                    drawBenchRowHighlight((Graphics2D) g, rx, ry, colW, rowH);
+                }
+            } else {
+                if (dragHoverSlot >= 37) {
+                    activeSlot = dragHoverSlot;
+                } else if (hoverBenchSlot >= 37) {
+                    activeSlot = hoverBenchSlot;
+                }
+                if (activeSlot >= 37) {
+                    int scroll = getAvailScrollIndex();
+                    int row = activeSlot - 37 - scroll;
+                    int maxRows = c.getHeight() / 27;
+                    if (row >= 0 && row < maxRows) {
+                        int ry = row * 27 + 1;
+                        int rx = 2;
+                        int colW = c.getWidth() - 4;
+                        int rowH = 25;
+                        drawBenchRowHighlight((Graphics2D) g, rx, ry, colW, rowH);
+                    }
+                }
+            }
         }
     }
 
@@ -1273,16 +1399,46 @@ public class EaFcUiHelper {
         int mx = e.getX();
         int my = e.getY();
         try {
-            if (components.ao.V(mx, my)) {
-                hover = components.ao.S(mx, my);
-            } else if (components.ao.X(mx, my)) {
-                hover = components.ao.U(mx, my);
+            if (mx >= 0 && mx <= 434 && my >= 0 && my <= 650) {
+                // Sobre o campo: detecta o titular (slots 1 a 25)
+                for (int s = 1; s <= 25 && s < STARTER_COORDS.length; s++) {
+                    int sx = STARTER_COORDS[s][0];
+                    int sy = STARTER_COORDS[s][1];
+                    if (sx >= 0 && mx >= sx - 12 && mx <= sx + 62 && my >= sy - 12 && my <= sy + 62) {
+                        hover = s;
+                        break;
+                    }
+                }
+                if (hover == -1) {
+                    try {
+                        if (components.ao.V(mx, my)) {
+                            int s = components.ao.S(mx, my);
+                            if (s >= 1 && s <= 25) hover = s;
+                        }
+                    } catch (Throwable ignored) {}
+                }
+            } else if (mx >= 440 && mx <= 1018) {
+                // Sobre as listas do Banco de Reservas e Fora do Banco
+                if (my >= 30 && my < 30 + 11 * 27) {
+                    int row = (my - 30) / 27;
+                    if (row >= 0 && row < 11) {
+                        hover = 26 + row;
+                    }
+                } else if (my >= getAvailListY() && my < getAvailListY() + 285) {
+                    int row = (my - getAvailListY()) / 27;
+                    if (row >= 0) {
+                        hover = 37 + getAvailScrollIndex() + row;
+                    }
+                }
             }
         } catch (Throwable ignored) {}
 
         dragHoverSlot = hover;
-        if (prevHover != hover && rootRef != null) {
-            rootRef.repaint();
+        if (prevHover != hover) {
+            if (pitchLabelRef != null) pitchLabelRef.repaint();
+            if (lblAARef != null) lblAARef.repaint();
+            if (lblABRef != null) lblABRef.repaint();
+            if (rootRef != null) rootRef.repaint();
         }
     }
 
@@ -1598,6 +1754,20 @@ public class EaFcUiHelper {
                 bp.setLayer(availHeader, JLayeredPane.DEFAULT_LAYER);
             } catch (Throwable ignored) {}
 
+            pitchLabelRef = pitchLabel;
+            lblAARef = lblAA;
+            lblABRef = lblAB;
+
+            if (pitchLabel != null) {
+                pitchLabel.setUI(new PitchOverlayUI());
+            }
+            if (lblAA != null) {
+                lblAA.setUI(new BenchOverlayUI(true));
+            }
+            if (lblAB != null) {
+                lblAB.setUI(new BenchOverlayUI(false));
+            }
+
             // Atualiza restrições no LayoutManager components.b para NUNCA mais resetar availHeader para y=185
             LayoutManager lm = bp.getLayout();
             if (lm != null) {
@@ -1719,9 +1889,9 @@ public class EaFcUiHelper {
                         fLblAA.setToolTipText(getPreMatchPlayerTooltip(p, e.getX()));
 
                         int prevH = hoverBenchSlot;
-                        Point pt = SwingUtilities.convertPoint(fLblAA, e.getPoint(), bp);
-                        if (components.ao.V(pt.x, pt.y)) {
-                            hoverBenchSlot = components.ao.S(pt.x, pt.y);
+                        int row = e.getY() / 27;
+                        if (row >= 0 && row < 11) {
+                            hoverBenchSlot = 26 + row;
                         } else {
                             hoverBenchSlot = -1;
                         }
@@ -1780,9 +1950,11 @@ public class EaFcUiHelper {
                         fLblAB.setToolTipText(getPreMatchPlayerTooltip(p, e.getX()));
 
                         int prevH = hoverBenchSlot;
-                        Point pt = SwingUtilities.convertPoint(fLblAB, e.getPoint(), bp);
-                        if (components.ao.X(pt.x, pt.y)) {
-                            hoverBenchSlot = components.ao.U(pt.x, pt.y);
+                        int row = e.getY() / 27;
+                        int scroll = getAvailScrollIndex();
+                        int maxRows = fLblAB.getHeight() / 27;
+                        if (row >= 0 && row < maxRows) {
+                            hoverBenchSlot = 37 + scroll + row;
                         } else {
                             hoverBenchSlot = -1;
                         }

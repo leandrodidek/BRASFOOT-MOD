@@ -419,6 +419,88 @@ public class FullEaFcInjector {
             System.out.println("PATCHED a/il.class (Táticas Salvas EA FC UI) written: " + b.length + " bytes");
         }
 
+        // -------------------------------------------------------------
+        // 7. PATCH a/dV.class (Nova Tela de Jogo ao Vivo - EA FC Match Center)
+        // -------------------------------------------------------------
+        {
+            InputStream is = zip.getInputStream(zip.getEntry("a/dV.class"));
+            ClassReader cr = new ClassReader(is);
+            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+
+            cr.accept(new ClassVisitor(Opcodes.ASM5, cw) {
+                @Override
+                public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+                    MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
+
+                    // mJ(): Constrói a nova interface EA FC Match Center ao inicializar a tela
+                    if ("mJ".equals(name) && "()V".equals(desc)) {
+                        return new MethodVisitor(Opcodes.ASM5, mv) {
+                            @Override
+                            public void visitInsn(int opcode) {
+                                if (opcode == Opcodes.RETURN) {
+                                    mv.visitVarInsn(Opcodes.ALOAD, 0);
+                                    mv.visitMethodInsn(Opcodes.INVOKESTATIC, "mod/brasfoot/LiveMatchHudManager", "setupHud",
+                                        "(Ljavax/swing/JPanel;)V", false);
+                                }
+                                super.visitInsn(opcode);
+                            }
+                        };
+                    }
+
+                    // qa(): Chamado a cada tick (minuto) do timer da partida
+                    if ("qa".equals(name) && "()V".equals(desc)) {
+                        return new MethodVisitor(Opcodes.ASM5, mv) {
+                            @Override
+                            public void visitInsn(int opcode) {
+                                if (opcode == Opcodes.RETURN) {
+                                    mv.visitVarInsn(Opcodes.ALOAD, 0);
+                                    mv.visitMethodInsn(Opcodes.INVOKESTATIC, "mod/brasfoot/LiveMatchHudManager", "onTick",
+                                        "(Ljavax/swing/JPanel;)V", false);
+                                }
+                                super.visitInsn(opcode);
+                            }
+                        };
+                    }
+
+                    // pZ(): Chamado na atualização do jogo do usuário
+                    if ("pZ".equals(name) && "()V".equals(desc)) {
+                        return new MethodVisitor(Opcodes.ASM5, mv) {
+                            @Override
+                            public void visitInsn(int opcode) {
+                                if (opcode == Opcodes.RETURN) {
+                                    mv.visitVarInsn(Opcodes.ALOAD, 0);
+                                    mv.visitMethodInsn(Opcodes.INVOKESTATIC, "mod/brasfoot/LiveMatchHudManager", "onMatchUpdated",
+                                        "(Ljavax/swing/JPanel;)V", false);
+                                }
+                                super.visitInsn(opcode);
+                            }
+                        };
+                    }
+
+                    // qe(): Chamado na ocorrência de gol ou evento na rodada
+                    if ("qe".equals(name) && "()V".equals(desc)) {
+                        return new MethodVisitor(Opcodes.ASM5, mv) {
+                            @Override
+                            public void visitInsn(int opcode) {
+                                if (opcode == Opcodes.RETURN) {
+                                    mv.visitVarInsn(Opcodes.ALOAD, 0);
+                                    mv.visitMethodInsn(Opcodes.INVOKESTATIC, "mod/brasfoot/LiveMatchHudManager", "onEventOrGoal",
+                                        "(Ljavax/swing/JPanel;)V", false);
+                                }
+                                super.visitInsn(opcode);
+                            }
+                        };
+                    }
+
+                    return mv;
+                }
+            }, 0);
+
+            byte[] b = cw.toByteArray();
+            saveClass("a/dV.class", b);
+            System.out.println("PATCHED a/dV.class (Live Match Center EA FC) written: " + b.length + " bytes");
+        }
+
 
 
 

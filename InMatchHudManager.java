@@ -3,6 +3,7 @@ package mod.brasfoot;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 import java.awt.geom.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -205,6 +206,64 @@ public class InMatchHudManager {
                 dqBench.setText("");
                 dqBench.setOpaque(true);
                 dqBench.setBackground(BG_DEEP);
+
+                final JLabel fDqBench = dqBench;
+                final Object fCdObj = cDObj;
+                dqBench.setUI(new javax.swing.plaf.basic.BasicLabelUI() {
+                    @Override
+                    public void paint(Graphics g, JComponent c) {
+                        super.paint(g, c);
+                        int activeSlot = -1;
+                        int dSlot = EaFcUiHelper.getDragHoverSlot();
+                        int hSlot = EaFcUiHelper.getHoverBenchSlot();
+                        if (dSlot >= 26 && dSlot <= 36) {
+                            activeSlot = dSlot;
+                        } else if (hSlot >= 26 && hSlot <= 36) {
+                            activeSlot = hSlot;
+                        }
+                        if (activeSlot >= 26 && activeSlot <= 36 && EaFcUiHelper.hasInMatchPlayer(fCdObj, activeSlot)) {
+                            int row = activeSlot - 26;
+                            int ry = 25 + row * 52;
+                            EaFcUiHelper.drawBenchRowHighlight((Graphics2D) g, 4, ry, 192, 46);
+                        }
+                    }
+                });
+
+                dqBench.addMouseMotionListener(new MouseMotionAdapter() {
+                    @Override
+                    public void mouseMoved(MouseEvent e) {
+                        int my = e.getY();
+                        int prevH = EaFcUiHelper.getHoverBenchSlot();
+                        int hover = -1;
+                        for (int s = 26; s <= 36; s++) {
+                            int by = 25 + (s - 26) * 52;
+                            if (my >= by && my <= by + 46) {
+                                if (EaFcUiHelper.hasInMatchPlayer(fCdObj, s)) {
+                                    hover = s;
+                                }
+                                break;
+                            }
+                        }
+                        EaFcUiHelper.setHoverBenchSlot(hover);
+                        if (prevH != hover) {
+                            fDqBench.repaint();
+                        }
+                    }
+                });
+
+                dqBench.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseExited(MouseEvent e) {
+                        if (EaFcUiHelper.getHoverBenchSlot() != -1) {
+                            EaFcUiHelper.setHoverBenchSlot(-1);
+                            fDqBench.repaint();
+                        }
+                    }
+                    @Override
+                    public void mouseReleased(MouseEvent e) {
+                        EaFcUiHelper.clearDragHover();
+                    }
+                });
             }
 
             // =========================================================
@@ -268,6 +327,17 @@ public class InMatchHudManager {
                         RoundRectangle2D.Float round = new RoundRectangle2D.Float(0, 0, c.getWidth(), c.getHeight(), 18, 18);
                         g2.clip(round);
                         super.paint(g2, c);
+
+                        // Desenha as miras de canto se estiver arrastando sobre um titular em jogo
+                        int slot = EaFcUiHelper.getDragHoverSlot();
+                        if (slot >= 1 && slot <= 25 && slot < EaFcUiHelper.IN_MATCH_STARTER_COORDS.length) {
+                            int jx = EaFcUiHelper.IN_MATCH_STARTER_COORDS[slot][0];
+                            int jy = EaFcUiHelper.IN_MATCH_STARTER_COORDS[slot][1];
+                            if (jx >= 0 && jy >= 0) {
+                                EaFcUiHelper.drawTargetCornerBrackets(g2, jx - 8, jy - 8 + 10, 56, 56);
+                            }
+                        }
+
                         g2.setClip(oldClip);
                         g2.setColor(new Color(45, 60, 88, 160));
                         g2.setStroke(new BasicStroke(1.5f));
@@ -276,6 +346,35 @@ public class InMatchHudManager {
                     }
                 });
             }
+
+            JLabel inMatchAy = (JLabel) getFieldValue(cDObj, "Ay");
+            if (inMatchAy != null) {
+                inMatchAy.setUI(new javax.swing.plaf.basic.BasicLabelUI() {
+                    @Override
+                    public void paint(Graphics g, JComponent c) {
+                        super.paint(g, c);
+                        int slot = EaFcUiHelper.getDragHoverSlot();
+                        if (slot >= 1 && slot <= 25 && slot < EaFcUiHelper.IN_MATCH_STARTER_COORDS.length) {
+                            int jx = EaFcUiHelper.IN_MATCH_STARTER_COORDS[slot][0] + 200;
+                            int jy = EaFcUiHelper.IN_MATCH_STARTER_COORDS[slot][1];
+                            if (jx >= 0 && jy >= 0) {
+                                EaFcUiHelper.drawTargetCornerBrackets((Graphics2D) g, jx - 8, jy - 8 + 10, 56, 56);
+                            }
+                        }
+                    }
+                });
+            }
+
+            if (df != null) {
+                df.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseReleased(MouseEvent e) {
+                        EaFcUiHelper.clearDragHover();
+                    }
+                });
+            }
+
+            EaFcUiHelper.setInMatchRefs(root, dsPitch, dqBench, inMatchAy, cDObj);
 
             if (activeTeam == 1) {
                 if (df != null) df.setBounds(20, 38, 620, 650);

@@ -275,6 +275,20 @@ public class FullEaFcInjector {
                         };
                     }
 
+                    // a(MouseEvent, I): Atualização do posicionamento do card arrastado durante a pausa do jogo
+                    if ("a".equals(name) && "(Ljava/awt/event/MouseEvent;I)V".equals(desc)) {
+                        mv.visitCode();
+                        mv.visitVarInsn(Opcodes.ALOAD, 0);
+                        mv.visitFieldInsn(Opcodes.GETFIELD, "a/cD", "AC", "Ljavax/swing/JLabel;");
+                        mv.visitVarInsn(Opcodes.ALOAD, 1);
+                        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "mod/brasfoot/EaFcUiHelper", "updateInMatchDragLocation",
+                            "(Ljavax/swing/JLabel;Ljava/awt/event/MouseEvent;)V", false);
+                        mv.visitInsn(Opcodes.RETURN);
+                        mv.visitMaxs(2, 2);
+                        mv.visitEnd();
+                        return new MethodVisitor(Opcodes.ASM5, null) {};
+                    }
+
                     if ("H".equals(name) && "(II)V".equals(desc)) {
                         return new MethodVisitor(Opcodes.ASM5, mv) {
                             @Override

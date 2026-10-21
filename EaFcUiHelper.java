@@ -170,8 +170,15 @@ public class EaFcUiHelper {
     private static JCheckBox junioresCheckRef = null;
 
     private static JLabel pitchLabelRef = null;
+    private static JLabel pitchAyRef = null;
     private static JLabel lblAARef = null;
     private static JLabel lblABRef = null;
+
+    private static JPanel inMatchRootRef = null;
+    private static JLabel inMatchPitchRef = null;
+    private static JLabel inMatchBenchRef = null;
+    private static JLabel inMatchAyRef = null;
+    private static Object inMatchCdRef = null;
 
     private static volatile int dragHoverSlot = -1;
     private static volatile int hoverBenchSlot = -1;
@@ -205,17 +212,105 @@ public class EaFcUiHelper {
         {345, 55}   // 25: Pta E
     };
 
+    public static final int[][] IN_MATCH_STARTER_COORDS = {
+        {-1, -1},
+        {190, 565}, // 1: Gol
+        {35, 425},  // 2: Lat D
+        {100, 485}, // 3: Zag
+        {190, 485}, // 4: Zag C
+        {285, 485}, // 5: Zag
+        {100, 405}, // 6: Vol
+        {190, 405}, // 7: Vol C
+        {285, 405}, // 8: Vol
+        {345, 425}, // 9: Lat E
+        {35, 270},  // 10: Ala D
+        {100, 315}, // 11: Meia
+        {190, 315}, // 12: Meia C
+        {285, 315}, // 13: Meia
+        {100, 205}, // 14: Meia Of
+        {190, 205}, // 15: Meia Of C
+        {285, 205}, // 16: Meia Of
+        {345, 270}, // 17: Ala E
+        {35, 55},   // 18: Pta D
+        {100, 115}, // 19: Ata
+        {190, 115}, // 20: Ata C
+        {285, 115}, // 21: Ata
+        {100, 35},  // 22: Cen
+        {190, 30},  // 23: Cen C
+        {285, 35},  // 24: Cen
+        {345, 55}   // 25: Pta E
+    };
+
     public static int getDragHoverSlot() {
         return dragHoverSlot;
+    }
+
+    public static int getHoverBenchSlot() {
+        return hoverBenchSlot;
+    }
+
+    public static void setHoverBenchSlot(int slot) {
+        hoverBenchSlot = slot;
+    }
+
+    public static void setInMatchRefs(JPanel root, JLabel pitch, JLabel bench, JLabel ay, Object cd) {
+        inMatchRootRef = root;
+        inMatchPitchRef = pitch;
+        inMatchBenchRef = bench;
+        inMatchAyRef = ay;
+        inMatchCdRef = cd;
+    }
+
+    public static boolean hasPreMatchPlayer(JPanel root, boolean isBench, int slot) {
+        if (root == null) return false;
+        try {
+            Field fAE = root.getClass().getDeclaredField("AE");
+            fAE.setAccessible(true);
+            ArrayList<?> ae = (ArrayList<?>) fAE.get(root);
+            if (ae == null || slot < 0 || slot >= ae.size()) return false;
+            Object ao = ae.get(slot);
+            if (ao == null) return false;
+            Method mX = ao.getClass().getMethod("x");
+            return mX.invoke(ao) != null;
+        } catch (Throwable ignored) {}
+        return false;
+    }
+
+    public static boolean hasInMatchPlayer(Object cDObj, int slot) {
+        if (cDObj == null) return false;
+        try {
+            int activeTeam = 1;
+            try {
+                Field fDi = cDObj.getClass().getDeclaredField("Di");
+                fDi.setAccessible(true);
+                activeTeam = fDi.getInt(cDObj);
+            } catch (Throwable ignored) {}
+
+            String listField = (activeTeam == 2) ? "Dc" : "AE";
+            Field fList = cDObj.getClass().getDeclaredField(listField);
+            fList.setAccessible(true);
+            ArrayList<?> list = (ArrayList<?>) fList.get(cDObj);
+            if (list == null || slot < 0 || slot >= list.size()) return false;
+            Object ao = list.get(slot);
+            if (ao == null) return false;
+            Method mX = ao.getClass().getMethod("x");
+            return mX.invoke(ao) != null;
+        } catch (Throwable ignored) {}
+        return false;
     }
 
     public static void clearDragHover() {
         dragHoverSlot = -1;
         hoverBenchSlot = -1;
         if (pitchLabelRef != null) pitchLabelRef.repaint();
+        if (pitchAyRef != null) pitchAyRef.repaint();
         if (lblAARef != null) lblAARef.repaint();
         if (lblABRef != null) lblABRef.repaint();
         if (rootRef != null) rootRef.repaint();
+        if (inMatchPitchRef != null) inMatchPitchRef.repaint();
+        if (inMatchBenchRef != null) inMatchBenchRef.repaint();
+        if (inMatchAyRef != null) inMatchAyRef.repaint();
+        if (inMatchRootRef != null) inMatchRootRef.repaint();
     }
 
     public static void drawTargetCornerBrackets(Graphics2D g2, int x, int y, int w, int h) {
@@ -299,7 +394,7 @@ public class EaFcUiHelper {
                 int jx = STARTER_COORDS[slot][0];
                 int jy = STARTER_COORDS[slot][1];
                 if (jx >= 0 && jy >= 0) {
-                    drawTargetCornerBrackets((Graphics2D) g, jx - 3, jy - 3, 56, 56);
+                    drawTargetCornerBrackets((Graphics2D) g, jx - 8, jy - 8, 56, 56);
                 }
             }
         }
@@ -323,7 +418,7 @@ public class EaFcUiHelper {
                 } else if (hoverBenchSlot >= 26 && hoverBenchSlot <= 36) {
                     activeSlot = hoverBenchSlot;
                 }
-                if (activeSlot >= 26 && activeSlot <= 36) {
+                if (activeSlot >= 26 && activeSlot <= 36 && hasPreMatchPlayer(rootRef, true, activeSlot)) {
                     int row = activeSlot - 26;
                     int ry = row * 27 + 1;
                     int rx = 2;
@@ -341,12 +436,12 @@ public class EaFcUiHelper {
                     int scroll = getAvailScrollIndex();
                     int row = activeSlot - 37 - scroll;
                     int maxRows = c.getHeight() / 27;
-                    if (row >= 0 && row < maxRows) {
-                        int ry = row * 27 + 1;
+                    int ry = row * 27;
+                    if (row >= 0 && row < maxRows && getPreMatchPlayerAt(rootRef, false, ry) != null) {
                         int rx = 2;
                         int colW = c.getWidth() - 4;
                         int rowH = 25;
-                        drawBenchRowHighlight((Graphics2D) g, rx, ry, colW, rowH);
+                        drawBenchRowHighlight((Graphics2D) g, rx, ry + 1, colW, rowH);
                     }
                 }
             }
@@ -1436,9 +1531,57 @@ public class EaFcUiHelper {
         dragHoverSlot = hover;
         if (prevHover != hover) {
             if (pitchLabelRef != null) pitchLabelRef.repaint();
+            if (pitchAyRef != null) pitchAyRef.repaint();
             if (lblAARef != null) lblAARef.repaint();
             if (lblABRef != null) lblABRef.repaint();
             if (rootRef != null) rootRef.repaint();
+        }
+    }
+
+    /**
+     * Atualização do arrasto de atletas durante a pausa da partida (a/cD).
+     */
+    public static void updateInMatchDragLocation(JLabel ac, MouseEvent e) {
+        if (ac == null || e == null) return;
+        ac.setLocation(e.getX() - 22, e.getY() - 22);
+
+        int prevHover = dragHoverSlot;
+        int hover = -1;
+        int mx = e.getX();
+        int my = e.getY();
+        try {
+            if (mx >= 0 && mx < 200) {
+                // Banco em jogo (Dq)
+                for (int s = 26; s <= 36; s++) {
+                    int by = 25 + (s - 26) * 52;
+                    if (my >= by - 4 && my <= by + 50) {
+                        if (hasInMatchPlayer(inMatchCdRef, s)) {
+                            hover = s;
+                        }
+                        break;
+                    }
+                }
+            } else if (mx >= 200 && mx <= 640) {
+                // Campo em jogo (Ds, deslocado 200px para a direita em DF)
+                int px = mx - 200;
+                int py = my - 10;
+                for (int s = 1; s <= 25 && s < IN_MATCH_STARTER_COORDS.length; s++) {
+                    int sx = IN_MATCH_STARTER_COORDS[s][0];
+                    int sy = IN_MATCH_STARTER_COORDS[s][1];
+                    if (sx >= 0 && px >= sx - 15 && px <= sx + 65 && py >= sy - 15 && py <= sy + 65) {
+                        hover = s;
+                        break;
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+
+        dragHoverSlot = hover;
+        if (prevHover != hover) {
+            if (inMatchPitchRef != null) inMatchPitchRef.repaint();
+            if (inMatchBenchRef != null) inMatchBenchRef.repaint();
+            if (inMatchAyRef != null) inMatchAyRef.repaint();
+            if (inMatchRootRef != null) inMatchRootRef.repaint();
         }
     }
 
@@ -1754,6 +1897,17 @@ public class EaFcUiHelper {
                 bp.setLayer(availHeader, JLayeredPane.DEFAULT_LAYER);
             } catch (Throwable ignored) {}
 
+            JLabel lblAy = null;
+            try {
+                Field fAy = root.getClass().getDeclaredField("Ay");
+                fAy.setAccessible(true);
+                lblAy = (JLabel) fAy.get(root);
+                if (lblAy != null) {
+                    lblAy.setUI(new PitchOverlayUI());
+                }
+            } catch (Throwable ignored) {}
+            pitchAyRef = lblAy;
+
             pitchLabelRef = pitchLabel;
             lblAARef = lblAA;
             lblABRef = lblAB;
@@ -1890,8 +2044,9 @@ public class EaFcUiHelper {
 
                         int prevH = hoverBenchSlot;
                         int row = e.getY() / 27;
-                        if (row >= 0 && row < 11) {
-                            hoverBenchSlot = 26 + row;
+                        int slot = 26 + row;
+                        if (p != null && row >= 0 && row < 11) {
+                            hoverBenchSlot = slot;
                         } else {
                             hoverBenchSlot = -1;
                         }
@@ -1953,7 +2108,7 @@ public class EaFcUiHelper {
                         int row = e.getY() / 27;
                         int scroll = getAvailScrollIndex();
                         int maxRows = fLblAB.getHeight() / 27;
-                        if (row >= 0 && row < maxRows) {
+                        if (p != null && row >= 0 && row < maxRows) {
                             hoverBenchSlot = 37 + scroll + row;
                         } else {
                             hoverBenchSlot = -1;
